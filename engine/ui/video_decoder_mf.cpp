@@ -259,8 +259,8 @@ class MfDecoder final : public VideoDecoder {
     }
 
     void copy_rows(const BYTE* row0, LONG pitch) {
-        const int w = out_w_ > 0 ? std::min(width_, out_w_) : width_;
-        const int h = out_h_ > 0 ? std::min(height_, out_h_) : height_;
+        const int w = out_w_ > 0 ? (std::min)(width_, out_w_) : width_;
+        const int h = out_h_ > 0 ? (std::min)(height_, out_h_) : height_;
         for (int y = 0; y < h; ++y) {
             const BYTE* s = row0 + static_cast<std::ptrdiff_t>(pitch) * y;
             std::uint8_t* o = rgba_.data() + static_cast<std::size_t>(y) * width_ * 4;

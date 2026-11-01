@@ -204,6 +204,7 @@
 #include "ui/select_keys.hpp"
 #include "ui/selection_rings.hpp"
 #include "ui/settings.hpp"
+#include "ui/skirmish_screen.hpp"
 #include "ui/sound.hpp"
 #include "ui/unit_panel.hpp"
 #include "ui/video_host.hpp"
@@ -273,6 +274,7 @@ struct App {
     SDL_Surface* surface = nullptr;  // batch mode: the software renderer's target
     SDL_Texture* world_tex = nullptr;
     std::string game_dir;
+    std::string extras_dir;  // <exe folder>/Extras when it exists, windowed desktop runs (decisions.md 46)
     bool lower_case_paths = false;
     // game
     std::vector<BasicParams> params;
@@ -630,10 +632,28 @@ SimGame& held(App& app) {
 }
 
 GameFileLoader loader(const App& app) {
-    return [&app](const std::string& path, std::string* error) {
+    return [&app](const std::string& path, std::string* error) -> std::optional<Bytes> {
         std::string p = path;
         if (app.lower_case_paths) {  // the web: also the Windows separators of the game's own names (ui/sound.cpp)
             for (char& c : p) c = static_cast<char>(c >= 'A' && c <= 'Z' ? c + 32 : c == '\\' ? '/' : c);
+        }
+        if (!app.extras_dir.empty() && p.size() > 5 && SDL_strncasecmp(p.c_str(), "Maps/", 5) == 0) {
+            const std::string maps = app.extras_dir + "/Maps/";
+            if (SDL_strcasecmp(p.c_str() + 5, "random.ind") == 0) {  // the game's list and the Extras maps after it
+                auto ind = load_file(app.game_dir + "/" + p, error);
+                if (!ind) return ind;
+                std::vector<std::string> extra;
+                for (const std::string& dat : list_files(maps, ".dat")) {
+                    const std::string pic = dat.substr(0, dat.size() - 4) + "_m.min";
+                    if (is_file_on_disk(maps + pic) || is_file_on_disk(app.game_dir + "/Maps/" + pic))
+                        extra.push_back(dat);
+                }
+                const std::string text = ui::random_ind_with(
+                    std::string_view(reinterpret_cast<const char*>(ind->data()), ind->size()), extra);
+                return Bytes(text.begin(), text.end());
+            }
+            std::string unused;
+            if (auto b = load_file(maps + p.substr(5), &unused)) return b;
         }
         return load_file(app.game_dir + "/" + p, error);
     };
@@ -725,6 +745,20 @@ bool in_panel(const App& app, float y) { return app.debug_hud && y >= kPanelTop;
 
 // The zoom's network rule (the cap for every player) in a window; batch runs keep their whole zoom (traces).
 bool zoom_network(const App& app) { return app.net_client != nullptr && smooth_camera(app); }
+
+// The original's hand (Cursor_Default.bmp) over the menus and the windows over the game, as the original draws it
+// everywhere (owner, 2026-11-01, docs/decisions.md 47; until then the menus kept the system's arrow). Its size is the
+// world zoom a game would start with in this window, so it does not change when the game starts.
+void menu_cursor(App& app) {
+    if (!app.interactive || !app.renderer) return;
+    int ow = 0, oh = 0;
+    SDL_GetRenderOutputSize(app.renderer, &ow, &oh);
+    const int scale = app.debug_hud || ow <= 0 || oh <= 0
+                          ? 1
+                          : ui::world_zoom_for(app.settings.world_zoom, app.settings.ui_scale, ow, oh);
+    if (!app.cursor_gfx) app.cursor_gfx = ui::cursor_graphics_open(app.renderer, loader(app));
+    ui::cursor_show(*app.cursor_gfx, ui::Cursor::Default, scale);
+}
 
 // The size of the game view for the renderer's output: the whole output divided by the world zoom (the interface), or
 // the 1024 x 768 view of the debug HUD. A new size redraws the static layer and keeps the camera inside its bounds.
@@ -4276,8 +4310,8 @@ std::string lobby_key(const ui::NetLobby& l) {
 
 // A network game from the menu whose link ended (the host left, the server stopped it): the game is dropped and the
 // main menu says why, instead of the app ending as a --host or --join game does.
-// The text of a network game that ended: "no game answered at <address>" for a join that never connected (net/client.hpp
-// kNoAnswerPrefix), else the reason.
+// The text of a network game that ended: "no game answered at <address>" for a join that never connected
+// (net/client.hpp kNoAnswerPrefix), else the reason.
 std::string net_ended_text(const App& app, const std::string& why) {
     const std::string r = why.substr(why.find(':') + 2);
     const std::string p = net::kNoAnswerPrefix;
@@ -4299,8 +4333,7 @@ void net_game_lost(App& app, const std::string& why) {
                                      &err, &app.lang);
     }
     if (app.menu && ui::frontend_show(*app.menu, "main", &err)) {
-        ui::frontend_message(*app.menu,
-                             net_ended_text(app, why));
+        ui::frontend_message(*app.menu, net_ended_text(app, why));
     }
     menu_presentation(app);
     audio::audio_music_play(app.audio.get(), 0);
@@ -4427,8 +4460,7 @@ SDL_AppResult net_menu_frame(App& app) {
         const std::string why = app.net_error;
         SDL_Log("%s", why.c_str());
         net_close(app);
-        ui::frontend_net_back(*app.menu,
-                              net_ended_text(app, why));
+        ui::frontend_net_back(*app.menu, net_ended_text(app, why));
         return SDL_APP_CONTINUE;
     }
     if (app.started) {  // the server started the game: the menu goes, the game takes the window
@@ -6150,8 +6182,9 @@ void lang_sync_frame(App& app) {
 #ifdef ANTANTA_RELEASE_CHECK
 // The public build's Releases notice (platform/release_check.hpp, decisions.md 40): it never updates itself. The
 // windowed menu asks GitHub for the newest release at every start (unless Game options' "Check for updates" is off);
-// no corner text in the menu (it read like a notice); batch runs never ask. A newer one is shown in a box whose button opens its
-// page in the browser; nothing is downloaded. A failure is one line in the session log (and a box only when asked).
+// no corner text in the menu (it read like a notice); batch runs never ask. A newer one is shown in a box whose button
+// opens its page in the browser; nothing is downloaded. A failure is one line in the session log (and a box only when
+// asked).
 void start_release_check(App& app) {
     app.releases = std::make_unique<release_check::Checker>(ANTANTA_VERSION);
     ui::frontend_set_update_link(true, false);  // the Game options row only, no corner text
@@ -6493,6 +6526,14 @@ SDL_AppResult app_init(void** appstate, int argc, char** argv, bool* windowed) {
     if (app->batch_ticks < 0 && app->menu_screen.empty() && app->bench_frame_seconds <= 0) {
         app->session_log =
             session_log_start(app->game_dir, app->user_dir);  // a run with a window keeps a log in the user's folder
+    }
+    if (const char* base = SDL_GetBasePath(); base && *windowed) {  // batch and test runs never read Extras
+        SDL_PathInfo info;
+        const std::string extras = std::string(base) + "Extras";
+        if (SDL_GetPathInfo(extras.c_str(), &info) && info.type == SDL_PATHTYPE_DIRECTORY) {
+            app->extras_dir = extras;
+            SDL_Log("extras: %s", extras.c_str());
+        }
     }
     if (app->menu_mode) {
         const SDL_AppResult r = start_menu(*app);
@@ -6843,7 +6884,7 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
     }
 #endif
     if (app.menu && !ui::frontend_game_runs(*app.menu)) {  // slice I8: the game goes on under the diplomacy window
-        if (app.cursor_gfx) ui::cursor_show_system(*app.cursor_gfx);  // slice I9: the menus keep the system's cursor
+        menu_cursor(app);
 #ifdef ANTANTA_UPDATER
         if (!update_frame(app)) return SDL_APP_SUCCESS;  // docs/download.md: quits for the new version
         lang_sync_frame(app);
@@ -6869,8 +6910,8 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
 #endif
         return SDL_APP_CONTINUE;
     }
-    if (app.started && app.menu) {  // slice I8: over the diplomacy window the system's cursor, as over the menus
-        if (app.cursor_gfx) ui::cursor_show_system(*app.cursor_gfx);
+    if (app.started && app.menu) {  // slice I8: over the diplomacy window the hand, as over the menus
+        menu_cursor(app);
     } else if (app.started) {  // slice I9: the game's cursor for this frame (docs/interface.md D.1)
         if (!app.cursor_gfx) app.cursor_gfx = ui::cursor_graphics_open(app.renderer, loader(app));
         ui::cursor_show(*app.cursor_gfx, game_cursor(app), app.debug_hud ? 1 : app.start_zoom);

@@ -98,10 +98,22 @@ you can change it in Game options. Mission texts and briefings come from your co
 
 ## Extra maps
 
-The skirmish list shows the maps in the game's `Maps` folder. Maps from other versions of the game (for example the
-five extra maps of version 1.2) appear by themselves when both of their files, `<name>.dat` and `<name>_m.min`, are in
-that folder. The Steam copy's map "Fran_2r_2" is damaged, so Entente Engine leaves it out of the list; an intact
-`Fran_2r_2.dat` in its place brings it back. For a network game on an extra map, every player should have it too.
+Entente Engine reads extra maps from a folder named `Extras` next to `EntenteEngine.exe`. Each map is two files,
+`<name>.dat` and its picture `<name>_m.min`, and both go into `Extras\Maps`:
+
+```
+The Entente Gold\
+  Antanta.exe
+  EntenteEngine.exe
+  Extras\
+    Maps\
+      <name>.dat
+      <name>_m.min
+```
+
+They appear at the end of the skirmish list. The Steam copy's map "Fran_2r_2" is damaged, so Entente Engine leaves it
+out of the list; an intact `Fran_2r_2.dat` in `Extras\Maps` brings it back. The game's own folders stay as they are.
+For a network game on an extra map, every player needs it too.
 
 ## Where your saves and settings live
 

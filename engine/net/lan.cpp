@@ -16,7 +16,8 @@
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <iphlpapi.h>
+
+#include <iphlpapi.h>  // after winsock2.h
 using Socket = SOCKET;
 constexpr Socket kNoSocket = INVALID_SOCKET;
 #else

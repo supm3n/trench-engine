@@ -14,6 +14,8 @@ The Entente Gold.
   See [FEATURES.md](docs/FEATURES.md).
 - **Comfort:** any window size and full screen, interface scale for big screens, smooth scrolling, mouse wheel zoom,
   menus in English, German, Italian and Russian.
+- **Extra maps:** maps from other versions of the game, put into an `Extras` folder next to the exe, appear at the end
+  of the skirmish list. See [INSTALL.md](docs/INSTALL.md#extra-maps).
 - **Network games** for up to 8 players on your network or by address, with rejoin after a drop, the computer taking
   over, autosaves and continuing a saved game.
 - **Performance:** full game speed on the biggest save we measured (86,415 units), about half the original's time per

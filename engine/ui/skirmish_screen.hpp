@@ -32,6 +32,12 @@ std::vector<MapEntry> parse_random_ind(std::string_view text);
 // order stay as they are; the screen shows pictures only, so there is no name to translate.
 void append_extra_maps(std::vector<MapEntry>& maps, const std::function<bool(const std::string& file)>& exists);
 
+// Ours (2026-11-01, docs/decisions.md 46): the Extras folder next to the exe, handed out separately (never in git or a
+// release), holds maps a bought copy lacks (the fan 1.2 package's five maps, the intact Fran_2r_2.dat). The app reads
+// Maps\<file> from Extras\Maps first, and random.ind as the game's text with a "8", "<file>" pair appended for each of
+// `extra` (the Extras .dat files that have a picture) the list does not hold yet, in the given order.
+std::string random_ind_with(std::string_view ind, const std::vector<std::string>& extra);
+
 // Deliberately different (docs/bugs.md B5, owner 2026-10-15): random.ind tags newhouses.dat 8 though it has 5
 // positions, and 6 to 8 players there crash the original. Each entry's count is lowered to the map's own position count
 // (its player records), so the screen offers a map only for as many players as it has positions. `read_map(file)` gives

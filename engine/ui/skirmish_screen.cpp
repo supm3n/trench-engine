@@ -54,6 +54,18 @@ void append_extra_maps(std::vector<MapEntry>& maps, const std::function<bool(con
     }
 }
 
+std::string random_ind_with(std::string_view ind, const std::vector<std::string>& extra) {
+    const std::vector<MapEntry> listed = parse_random_ind(ind);
+    std::string out(ind);
+    if (!out.empty() && out.back() != '\n') out += "\r\n";
+    for (const std::string& file : extra) {
+        bool known = false;
+        for (const MapEntry& m : listed) known = known || same_name(m.file, file);
+        if (!known) out += "8\r\n" + file + "\r\n";
+    }
+    return out;
+}
+
 void limit_to_map_positions(std::vector<MapEntry>& maps,
                             const std::function<std::optional<Bytes>(const std::string& file)>& read_map,
                             std::vector<std::string>* left_out) {

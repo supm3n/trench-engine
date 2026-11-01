@@ -6,9 +6,9 @@
 #include <cstdlib>
 
 #include "net/config.hpp"
-#include "sim_hash.hpp"  // written at build time (scripts/sim-hash.cmake)
 #include "sim/ownsave.hpp"
 #include "sim/trace.hpp"
+#include "sim_hash.hpp"  // written at build time (scripts/sim-hash.cmake)
 
 namespace antanta::net {
 
