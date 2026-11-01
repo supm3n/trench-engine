@@ -23,12 +23,13 @@ year: 2026.1 is the first release of 2026.
 </p>
 
 > [!IMPORTANT]
-> **You need your own copy of The Entente Gold**, for example from Steam. Entente Engine contains none of the game's files: no pictures, sounds, maps or mission texts. It reads them from your own copy of The Entente Gold. To play the same game, the code does include some numbers from the original program (such as research prices and shell values) and the few words painted on the game's buttons, which it translates for the menus. It never changes your copy, and the original game keeps working as before.
+> **You need your own copy of The Entente Gold**, for example from Steam. Entente Engine contains none of the game's files: no pictures, sounds, maps or mission texts. It reads them from your own copy of The Entente Gold. To play the same game, the code does include some numbers from the original program (such as research prices and shell values) and the few words painted on the game's buttons, which it translates for the menus. It never changes the game's own files, and the original game keeps working as before.
 
 ## Download and install
 
 1. Download the newest version from the **[Releases page](https://github.com/supm3n/trench-engine/releases)**.
-2. Put `EntenteEngine.exe` into a folder of your own (for example a new folder in Documents), not under Program Files.
+2. Put `EntenteEngine.exe` into the game's folder, next to the original `Antanta.exe` (in Steam: right-click the game,
+   **Manage**, **Browse local files**).
 3. Double-click it. On the first start Windows may warn about a new, unsigned program: click **More info**, then
    **Run anyway**.
 

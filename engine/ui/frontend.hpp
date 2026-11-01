@@ -127,6 +127,9 @@ enum class FrontendRequest {
 FrontendRequest frontend_event(Frontend& f, const SDL_Event& e);
 void frontend_draw(Frontend& f);
 const Settings& frontend_settings(const Frontend& f);
+// Ours: full screen was switched outside the front-end (Alt+Enter, the browser): its settings and an open Options
+// dialog's resolution picker (its Full screen item) follow, so a later Ok keeps it.
+void frontend_set_fullscreen(Frontend& f, bool on);
 // The clicks the buttons, check boxes and lists asked for since the last call (the app plays them, slice J).
 int frontend_take_clicks(Frontend& f);
 const Profiles& frontend_profiles(const Frontend& f);

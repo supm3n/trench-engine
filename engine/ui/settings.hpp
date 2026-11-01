@@ -11,6 +11,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "formats/gameinf.hpp"
 
@@ -24,7 +25,7 @@ struct Settings {
     // The Options picture picker: 0..4 = 1024x768, 1152x864, 1280x960, 1280x1024, 1600x1200. In the original it is the
     // screen mode; here it is the window size (the menus are drawn on the 1024 x 768 canvas, letterboxed).
     std::uint8_t resolution = 0;
-    bool fullscreen = false;     // ours: Alt+Enter
+    bool fullscreen = false;     // ours: Alt+Enter and the picker's Full screen (resolution keeps the window's size)
     std::uint8_t speed_ms = 30;  // milliseconds per tick; the Options slider offers 30..90
     bool hints = false;
     std::uint8_t mouse_scroll = 95;      // 1..100
@@ -61,6 +62,11 @@ struct Settings {
     // Ours (docs/your-version.md 0): the skirmish screen's Rules row as chosen last, so the next start (and the browser
     // page) offers it again; written only when it is Entente Engine Plus.
     bool rules_plus = false;
+    // Ours: the desktop window as the player left it (window_place below): its position and size when it was last a
+    // plain window (not maximised, not full screen), and whether it was maximised. window_w 0: none yet, the window
+    // opens at the Options resolution's size, centred. Only the windowed menu run reads and writes them.
+    int window_x = 0, window_y = 0, window_w = 0, window_h = 0;
+    bool window_maximized = false;
 
 
 
@@ -75,7 +81,8 @@ Settings settings_from_gameinf(const GameInf& g);
 // The file: one "name value" line per setting, '#' starts a comment line. Every setting must be present once. The
 // advisor lines hold 20 switches; a file written before 2026-10-15 evening has 6 economic and 4 military, read with
 // the others on. The three interface lines (ui_scale, ui_pictures, world_zoom), the three network lines
-// (net_autosave, net_seat_hold, net_ai_level) and sim_thread are newer: a file without them gets the defaults.
+// (net_autosave, net_seat_hold, net_ai_level), sim_thread and the window lines (window_x, window_y, window_w,
+// window_h, window_maximized) are newer: a file without them gets the defaults.
 // "language <code>" is written only when a language was chosen; without it the game follows the system.
 std::string settings_print(const Settings& s);
 std::optional<Settings> settings_parse(std::string_view text, std::string* error);
@@ -85,6 +92,22 @@ struct Size {
     int w = 0, h = 0;
 };
 Size resolution_size(std::uint8_t resolution);
+
+// Ours: where the desktop window opens (no SDL here; the app asks SDL for the displays). A rectangle in screen
+// pixels; for the window it is the client area, as SDL_GetWindowPosition and SDL_GetWindowSize give it.
+struct WindowRect {
+    int x = 0, y = 0, w = 0, h = 0;
+};
+// `r` moved and shrunk into `usable` (a display's usable bounds), with `title_h` kept free above it for the title bar.
+WindowRect window_clamp(WindowRect r, const WindowRect& usable, int title_h);
+struct WindowPlace {
+    WindowRect r;
+    bool maximized = false;
+};
+// The remembered window (Settings::window_*) when the middle of its top edge is on one of `usable` (the displays'
+// usable bounds, the primary first), clamped to that display; else the remembered size (or, with none, the Options
+// resolution's) centred on the primary display and clamped to it. No display at all: the size at (0, 0).
+WindowPlace window_place(const Settings& s, const std::vector<WindowRect>& usable, int title_h);
 
 
 float volume_to_slider(std::uint8_t volume);

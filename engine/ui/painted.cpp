@@ -26,6 +26,7 @@ enum Look : std::uint8_t {
     kPlaque,      // the labels on the Options dialog's plaques (Options.les back.bmp)
     kTiles,       // the stencil headings of letter tiles (Single Player, Multiplayer, Load Mission and the others)
     kTilesSerif,  // the headings of serif letter tiles (the Options dialog's Settings, the in-game menu's Game Menu)
+    kResolution,  // the Options dialog's resolution pictures (Options.les 1024x768.bmp and the others)
 };
 
 constexpr PaintInk ink(std::uint32_t text, std::uint32_t halo, int dx, int dy, int grow, int blur, int strength) {
@@ -45,7 +46,7 @@ constexpr PaintLook look(PaintFont font, int em, int min_em, int lines, int trac
 
 constexpr PaintFont kSerif = PaintFont::Menu;
 
-const std::array<PaintLook, 13> kLooks = {
+const std::array<PaintLook, 14> kLooks = {
     // kMainMenu: cream with a dark shadow; red with a light glow; black with a light glow
     look(kSerif, 20, 14, 1, 12, ink(0xfaf6cc, 0x201a08, 1, 1, 2, 3, 96), ink(0xd81c10, 0xfff0a0, 0, 0, 2, 3, 110),
          ink(0x141408, 0xfff4a8, 0, 0, 2, 3, 110)),
@@ -81,6 +82,8 @@ const std::array<PaintLook, 13> kLooks = {
     // kTiles, kTilesSerif: the letters as large as the original's (up to em), their colour the original's
     look(PaintFont::Display, 80, 8, 1, 0, {}, {}, {}),
     look(kSerif, 40, 8, 1, 0, {}, {}, {}),
+    // kResolution: cream with a dark glow, the same in both cells (normal and under the mouse)
+    look(kSerif, 19, 12, 1, 0, ink(0xfaf6cc, 0x000000, 1, 1, 2, 3, 110), ink(0xfaf6cc, 0x000000, 1, 1, 2, 3, 110), {}),
 };
 
 // ---- the table ----
@@ -984,6 +987,44 @@ std::string lower_name(std::string_view path) {
 }  // namespace
 
 const std::vector<PaintedWord>& painted_words() { return kWords; }
+
+const PaintedWord& painted_full_screen() {
+    static const PaintedWord kFullScreen{
+        "options.les", "1280x1024.bmp", "options.full_screen", 2, PaintFill::Cols, kResolution, 22, 9, 141, 29};
+    return kFullScreen;
+}
+
+void painted_full_screen_blank(Image& img) {
+    const PaintedWord& w = painted_full_screen();
+    painted_blank(img, w, nullptr);
+    // The columns' blend leaves streaks on the red glass: each row of the box is smoothed along the row (a box of
+    // 2 * kR + 1 pixels, reaching kR beyond the box so its edges meet the picture).
+    constexpr int kR = 8;
+    const int cell_w = img.width / std::max<int>(1, w.cells);
+    const Box b = clip_box(w, cell_w, img.height);
+    for (int c = 0; c < w.cells; ++c) {
+        for (int y = b.y; y < b.y + b.h; ++y) {
+            std::vector<Rgb> row;
+            for (int x = b.x; x < b.x + b.w; ++x) {
+                Rgb sum;
+                int n = 0;
+                for (int k = std::max(0, x - kR); k <= std::min(cell_w - 1, x + kR); ++k) {
+                    const std::uint8_t* p = at(img, c * cell_w + k, y);
+                    if (keyed(p)) continue;
+                    sum.r += p[0], sum.g += p[1], sum.b += p[2];
+                    ++n;
+                }
+                row.push_back(n ? Rgb{sum.r / n, sum.g / n, sum.b / n} : Rgb{});
+            }
+            for (int x = b.x; x < b.x + b.w; ++x) {
+                std::uint8_t* p = at(img, c * cell_w + x, y);
+                if (keyed(p)) continue;
+                const Rgb& v = row[static_cast<std::size_t>(x - b.x)];
+                p[0] = clamp8(v.r), p[1] = clamp8(v.g), p[2] = clamp8(v.b);
+            }
+        }
+    }
+}
 
 const PaintLook& painted_look(const PaintedWord& w) { return kLooks[w.look]; }
 

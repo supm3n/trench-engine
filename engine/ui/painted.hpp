@@ -80,6 +80,12 @@ const PaintLook& painted_look(const PaintedWord& w);
 // The table's entries for a picture of an archive (`archive` may be a path: its file name is compared; both without
 // regard to case).
 std::vector<const PaintedWord*> painted_find(std::string_view archive, std::string_view picture);
+// Ours: the Options resolution picker's last item, Full screen (`key`, in every language, English too), made from the
+// 1280 x 1024 picture with its words taken out. Not in the table: that picture itself keeps its words.
+const PaintedWord& painted_full_screen();
+// Its words taken out of the 1280 x 1024 picture (painted_blank, then smoothed along the rows); painted_draw puts the
+// text on.
+void painted_full_screen_blank(Image& img);
 
 // One line of text drawn white: its coverage (0 to 255 per pixel, w x h), the baseline at row `ascent`, and the height
 // of a capital letter above the baseline.

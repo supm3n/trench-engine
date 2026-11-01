@@ -226,7 +226,7 @@
 using namespace antanta;
 
 #ifdef __EMSCRIPTEN__
-// The page's full screen (apply_window): asked for and left by the page, not by SDL's canvas mode.
+// The page's full screen (apply_fullscreen): asked for and left by the page, not by SDL's canvas mode.
 EM_JS(void, web_fullscreen, (int on), {
     if (on && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(function(){});
     if (!on && document.fullscreenElement) document.exitFullscreen().catch(function(){});
@@ -391,6 +391,10 @@ struct App {
     ui::FrontendPtr menu;
     ui::Settings settings;
     std::string settings_path;  // empty: the settings are not stored (batch)
+    // Ours: the windowed menu run (the desktop) remembers its window (place_window); a move or resize is stored once it
+    // has rested a second (window_store_ns, 0: nothing to store) and at the end.
+    bool remember_window = false;
+    Uint64 window_store_ns = 0;
     std::string profiles_path;  // empty: the profiles are not stored (batch)
     ui::Profiles profiles;
     std::optional<std::uint32_t> seed;  // --seed
@@ -4744,24 +4748,94 @@ void record_progress(App& app) {
     store_progress(app);
 }
 
-// Full screen, or a window of the size the Options resolution picture names, kept inside the display. The web: the
-// canvas fills the page (SDL_WINDOW_FILL_DOCUMENT) and full screen is the page's, which the browser allows only shortly
-// after a click or a key (Play, Alt+Enter, the Options); the setting follows the page (SDL_AppEvent).
-void apply_window(App& app) {
+#ifndef __EMSCRIPTEN__
+// The height of the window's title bar, kept free above it on the display (40 when the system does not say).
+int title_bar_height(SDL_Window* window) {
+    int top = 0;
+    return SDL_GetWindowBordersSize(window, &top, nullptr, nullptr, nullptr) && top > 0 ? top : 40;
+}
+
+ui::WindowRect usable_bounds(SDL_DisplayID display) {
+    SDL_Rect r{};
+    if (!SDL_GetDisplayUsableBounds(display, &r)) return {};
+    return {r.x, r.y, r.w, r.h};
+}
+
+// A size picked in the Options resolution picker: the window gets that size (ours; the player may then change it by
+// hand). A maximised window is restored first and the window is kept on its display. Called after leaving full screen.
+void apply_resolution(App& app) {
+    const ui::Size size = ui::resolution_size(app.settings.resolution);
+    if (SDL_GetWindowFlags(app.window) & SDL_WINDOW_MAXIMIZED) {
+        SDL_RestoreWindow(app.window);
+        SDL_SyncWindow(app.window);
+    }
+    ui::WindowRect r{0, 0, size.w, size.h};
+    SDL_GetWindowPosition(app.window, &r.x, &r.y);
+    const ui::WindowRect usable = usable_bounds(SDL_GetDisplayForWindow(app.window));
+    if (usable.w > 0) r = ui::window_clamp(r, usable, title_bar_height(app.window));
+    SDL_SetWindowSize(app.window, r.w, r.h);
+    SDL_SetWindowPosition(app.window, r.x, r.y);
+}
+#endif
+
+// Full screen or the window (Alt+Enter, the Options resolution picker's Full screen). Ours on the desktop: borderless
+// full screen at the desktop's mode; leaving it gives back the window as it was. The web: the canvas fills the page
+// (SDL_WINDOW_FILL_DOCUMENT) and full screen is the page's, which the browser allows only shortly after a click or a
+// key (Play, Alt+Enter); the setting follows the page (SDL_AppEvent).
+void apply_fullscreen(App& app) {
 #ifdef __EMSCRIPTEN__
     web_fullscreen(app.settings.fullscreen ? 1 : 0);
 #else
     SDL_SetWindowFullscreen(app.window, app.settings.fullscreen);
-    if (app.settings.fullscreen) return;
-    ui::Size size = ui::resolution_size(app.settings.resolution);
-    SDL_Rect r{};
-    if (SDL_GetDisplayUsableBounds(SDL_GetDisplayForWindow(app.window), &r)) {
-        size.w = std::min(size.w, r.w);
-        size.h = std::min(size.h, r.h - 40);  // room for the title bar
-    }
-    SDL_SetWindowSize(app.window, size.w, size.h);
+    SDL_SyncWindow(app.window);
 #endif
 }
+
+// Ours (desktop): the window of the last run (Settings::window_*, ui::window_place): its place when that is still on a
+// display, else centred on the primary display; maximised again if it was; full screen only then, so leaving full
+// screen gives back that window. The window was created hidden and is shown here. The web has only the page.
+void place_window(App& app) {
+#ifdef __EMSCRIPTEN__
+    apply_fullscreen(app);
+#else
+    std::vector<ui::WindowRect> usable;
+    const SDL_DisplayID primary = SDL_GetPrimaryDisplay();
+    if (const ui::WindowRect r = usable_bounds(primary); r.w > 0) usable.push_back(r);
+    int n = 0;
+    if (SDL_DisplayID* ids = SDL_GetDisplays(&n)) {
+        for (int i = 0; i < n; ++i) {
+            if (ids[i] == primary) continue;
+            if (const ui::WindowRect r = usable_bounds(ids[i]); r.w > 0) usable.push_back(r);
+        }
+        SDL_free(ids);
+    }
+    const ui::WindowPlace p = ui::window_place(app.settings, usable, title_bar_height(app.window));
+    SDL_SetWindowSize(app.window, p.r.w, p.r.h);
+    SDL_SetWindowPosition(app.window, p.r.x, p.r.y);
+    if (p.maximized) SDL_MaximizeWindow(app.window);
+    if (app.settings.fullscreen) SDL_SetWindowFullscreen(app.window, true);
+    SDL_ShowWindow(app.window);
+    app.remember_window = !app.settings_path.empty();
+#endif
+}
+
+// Ours (desktop): the window was moved, resized, maximised or restored: its place goes into the settings (a plain
+// window's rectangle; maximised or not) and is stored once it has rested (SDL_AppIterate) or at the end.
+#ifndef __EMSCRIPTEN__
+void note_window(App& app) {
+    const SDL_WindowFlags flags = SDL_GetWindowFlags(app.window);
+    if (flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_MINIMIZED | SDL_WINDOW_HIDDEN)) return;
+    ui::Settings& s = app.settings;
+    s.window_maximized = (flags & SDL_WINDOW_MAXIMIZED) != 0;
+    if (!s.window_maximized) {
+        SDL_GetWindowPosition(app.window, &s.window_x, &s.window_y);
+        SDL_GetWindowSize(app.window, &s.window_w, &s.window_h);
+        s.window_x = std::clamp(s.window_x, -32768, 32767), s.window_y = std::clamp(s.window_y, -32768, 32767);
+        s.window_w = std::clamp(s.window_w, 0, 32767), s.window_h = std::clamp(s.window_h, 0, 32767);
+    }
+    app.window_store_ns = SDL_GetTicksNS() + SDL_NS_PER_SECOND;
+}
+#endif
 
 // The videos' sound follows the music setting, on / off and volume (ours: no volume call was found in the original's
 // video code, so there they play at the system level; the music is what they replace).
@@ -5358,10 +5432,13 @@ SDL_AppResult menu_request(App& app, ui::FrontendRequest request) {
     switch (request) {
         case ui::FrontendRequest::Quit: return SDL_APP_SUCCESS;
         case ui::FrontendRequest::SettingsChanged: {
-            const bool fullscreen = app.settings.fullscreen;
+            const ui::Settings before = app.settings;
             const std::string language = app.settings.language;
             app.settings = ui::frontend_settings(*app.menu);
-            app.settings.fullscreen = fullscreen;
+            // The window's place is the app's (note_window); the front-end's copy is from when it opened.
+            app.settings.window_x = before.window_x, app.settings.window_y = before.window_y;
+            app.settings.window_w = before.window_w, app.settings.window_h = before.window_h;
+            app.settings.window_maximized = before.window_maximized;
             store_settings(app);
             if (app.settings.language != language) {  // Game options' Language row: at once, over --lang
                 app.cli_lang.clear();
@@ -5376,7 +5453,10 @@ SDL_AppResult menu_request(App& app, ui::FrontendRequest request) {
             }
             audio::audio_settings(app.audio.get(), app.settings);
             app.video.set_volume(video_volume(app.settings));
-            apply_window(app);
+            if (app.settings.fullscreen != before.fullscreen) apply_fullscreen(app);  // the picker's Full screen
+#ifndef __EMSCRIPTEN__
+            if (app.settings.resolution != before.resolution) apply_resolution(app);  // the Options resolution
+#endif
             if (auto adv = ui::frontend_take_game_advisors(*app.menu); adv && app.view()) {  // Game options in a game
                 for (sim::Command& c : ui::game_options_orders(app.view()->my_player, *adv)) {
                     queue_orders(app, {std::move(c)}, "");  // two orders of their own (O lines 1 and 2 of the tick)
@@ -5620,8 +5700,9 @@ SDL_AppResult menu_event(App& app, SDL_Event* e) {
     if (e->type == SDL_EVENT_KEY_DOWN && (e->key.key == SDLK_RETURN || e->key.key == SDLK_KP_ENTER) &&
         (e->key.mod & SDL_KMOD_ALT) != 0) {  // ours: Alt+Enter switches between window and full screen
         app.settings.fullscreen = !app.settings.fullscreen;
-        apply_window(app);
+        apply_fullscreen(app);
         store_settings(app);
+        ui::frontend_set_fullscreen(*app.menu, app.settings.fullscreen);  // an open Options picker follows
         return SDL_APP_CONTINUE;
     }
     SDL_ConvertEventToRenderCoordinates(app.renderer, e);
@@ -6124,14 +6205,19 @@ SDL_AppResult start_menu(App& app) {
         SDL_Log("cannot start the video: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
-    if (!SDL_CreateWindowAndRenderer("Entente Engine", kViewWidth, kViewHeight, kWindowFlags, &app.window,
+#ifdef __EMSCRIPTEN__
+    const SDL_WindowFlags hidden = 0;
+#else
+    const SDL_WindowFlags hidden = SDL_WINDOW_HIDDEN;  // shown by place_window at its place
+#endif
+    if (!SDL_CreateWindowAndRenderer("Entente Engine", kViewWidth, kViewHeight, kWindowFlags | hidden, &app.window,
                                      &app.renderer)) {
         SDL_Log("cannot create window: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
     SDL_SetRenderVSync(app.renderer, 1);
     SDL_SetRenderLogicalPresentation(app.renderer, kViewWidth, kViewHeight, SDL_LOGICAL_PRESENTATION_LETTERBOX);
-    apply_window(app);
+    place_window(app);
     session_log_video_info(app.window, app.renderer);
     std::string err;
 #ifdef __EMSCRIPTEN__
@@ -6484,7 +6570,15 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* e) {
     // The page went in or out of full screen (also by the browser: Esc held, F11): the setting follows, as Alt+Enter's.
     if (e->type == SDL_EVENT_WINDOW_RESIZED) {
         const bool full = web_is_fullscreen() != 0;
-        if (app.settings.fullscreen != full) app.settings.fullscreen = full, store_settings(app);
+        if (app.settings.fullscreen != full) {
+            app.settings.fullscreen = full, store_settings(app);
+            if (app.menu) ui::frontend_set_fullscreen(*app.menu, full);
+        }
+    }
+#else
+    if (app.remember_window && (e->type == SDL_EVENT_WINDOW_MOVED || e->type == SDL_EVENT_WINDOW_RESIZED ||
+                                e->type == SDL_EVENT_WINDOW_MAXIMIZED || e->type == SDL_EVENT_WINDOW_RESTORED)) {
+        note_window(app);
     }
 #endif
     if (app.video.active()) {  // a click, Esc, Space or Enter skips the video (ours; the original: Esc only); Alt+Enter
@@ -6593,7 +6687,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* e) {
             if ((e->key.key == SDLK_RETURN || e->key.key == SDLK_KP_ENTER) && (e->key.mod & SDL_KMOD_ALT) != 0 &&
                 !e->key.repeat) {  // ours, as in the menus: Alt+Enter switches between window and full screen
                 app.settings.fullscreen = !app.settings.fullscreen;
-                apply_window(app);
+                apply_fullscreen(app);
                 store_settings(app);
                 break;
             }
@@ -6719,6 +6813,10 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
     const FrameLog frame_log{app};
     web_credits(app);
 #endif
+    if (app.window_store_ns != 0 && SDL_GetTicksNS() >= app.window_store_ns) {  // the window rested (note_window)
+        app.window_store_ns = 0;
+        store_settings(app);
+    }
     if (app.video.active()) {
         app.video.iterate(app.renderer);
         return SDL_APP_CONTINUE;
@@ -6865,6 +6963,7 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
 void SDL_AppQuit(void* appstate, SDL_AppResult) {
     std::unique_ptr<App> app(static_cast<App*>(appstate));
     if (!app) return;
+    if (app->window_store_ns != 0) store_settings(*app);  // a window change not stored yet
     app->host.close_files();
     app->host.shutdown();
     if (app->net_trace) std::fclose(app->net_trace);

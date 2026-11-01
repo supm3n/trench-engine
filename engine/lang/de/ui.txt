@@ -11,6 +11,8 @@ menu.build_label_developer = Entente Engine {version} (Entwicklerversion)
 menu.check_updates = Nach Updates suchen
 #@ en=2c6f1c src=ai
 options.fits_window = Passt ins Fenster
+#@ en=d15f88 src=ai
+options.full_screen = Vollbild
 #@ en=0e06dc src=ai
 options.interface_scale = Oberflächengröße
 #@ en=9280fc src=ai

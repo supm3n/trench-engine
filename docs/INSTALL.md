@@ -36,15 +36,20 @@ You do not need to start the original game first, and you do not need to change 
 
 1. Open the **[Releases page](https://github.com/supm3n/trench-engine/releases)** and download the newest version.
 2. Check the download's fingerprint if you like (see [Verifying your download](../README.md#verifying-your-download)).
-3. Make a folder of your own, for example `Documents\Entente Engine`, and put `EntenteEngine.exe` into it.
+3. Put `EntenteEngine.exe` into the game's folder, next to the original `Antanta.exe`. In Steam, right-click the
+   game, then **Manage**, **Browse local files** to open that folder. Windows may ask for permission to copy the file
+   there, because Steam installs games under Program Files: click **Continue**.
 4. Double-click `EntenteEngine.exe`. You may want to pin it to the Start menu or make a shortcut on the Desktop.
 
 Please keep in mind:
 
-- **Do not put it under Program Files** or another protected Windows folder (Steam installs games under Program Files
-  by default). A folder of your own is simpler and avoids Windows' write protection.
-- **Keep the name `EntenteEngine.exe`.** Never rename it to `Antanta.exe` and never copy it into the game's folder
-  under that name: `Antanta.exe` is the original game's own program, and the two would replace each other.
+- **Keep the name `EntenteEngine.exe`.** Never rename it to `Antanta.exe`: that is the original game's own program,
+  and the two would replace each other.
+- Entente Engine only reads the game's files and never changes them. Your saves and settings go to your own user
+  folder (see [Where your saves and settings live](#where-your-saves-and-settings-live)), so it needs no
+  administrator rights to run.
+- **Any other folder works too.** Entente Engine finds a Steam copy by itself wherever the exe is, and asks for the
+  game's folder only if it cannot find it (see below).
 
 ## The Windows warning on the first start
 
@@ -103,6 +108,11 @@ Nothing is ever written into the game's folder.
 To back up your games, copy that folder.
 
 ## Options worth knowing
+
+**Window or full screen:** in the main menu's **Options**, the **Screen Resolution** box lists the window sizes and,
+at the end, **Full screen**. **Alt+Enter** switches between the two at any time. You can also drag the window to any
+size or maximise it; the game remembers its size and place for the next start. Full screen fills your screen at its
+own resolution and leaves your monitor's settings alone.
 
 In the main menu: **Options**, then **Game options**.
 
@@ -167,7 +177,7 @@ update to the same version.
 
 ## Uninstalling
 
-1. Delete `EntenteEngine.exe` (and the folder you made for it).
+1. Delete `EntenteEngine.exe`.
 2. If you also want to remove your saves and settings, delete `%APPDATA%\EntenteEngine`.
 
 Your copy of The Entente Gold is not touched either way.

@@ -1,5 +1,6 @@
 #include "ui/settings.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <vector>
@@ -35,7 +36,8 @@ struct Field {
     std::uint8_t Settings::* byte;
     bool Settings::* flag;
     int lo, hi;
-    bool optional = false;  // added after the first files were written: missing means the default
+    bool optional = false;             // added after the first files were written: missing means the default
+    int Settings::* number = nullptr;  // a wider value than a byte (the window's position and size)
 };
 
 const Field kFields[] = {
@@ -60,12 +62,21 @@ const Field kFields[] = {
     {"net_seat_hold", &Settings::net_seat_hold, nullptr, 0, 60, true},
     {"net_ai_level", &Settings::net_ai_level, nullptr, 0, 3, true},
     {"sim_thread", &Settings::sim_thread, nullptr, 0, 2, true},
+    {"window_x", nullptr, nullptr, -32768, 32767, true, &Settings::window_x},
+    {"window_y", nullptr, nullptr, -32768, 32767, true, &Settings::window_y},
+    {"window_w", nullptr, nullptr, 0, 32767, true, &Settings::window_w},
+    {"window_h", nullptr, nullptr, 0, 32767, true, &Settings::window_h},
+    {"window_maximized", nullptr, &Settings::window_maximized, 0, 1, true},
 };
 
-int get(const Settings& s, const Field& f) { return f.byte ? s.*(f.byte) : (s.*(f.flag) ? 1 : 0); }
+int get(const Settings& s, const Field& f) {
+    return f.number ? s.*(f.number) : f.byte ? s.*(f.byte) : (s.*(f.flag) ? 1 : 0);
+}
 
 void set(Settings& s, const Field& f, int v) {
-    if (f.byte) {
+    if (f.number) {
+        s.*(f.number) = v;
+    } else if (f.byte) {
         s.*(f.byte) = static_cast<std::uint8_t>(v);
     } else {
         s.*(f.flag) = v != 0;
@@ -85,12 +96,15 @@ std::vector<std::string_view> words_of(std::string_view line) {
 }
 
 bool to_int(std::string_view w, int lo, int hi, int* out) {
-    if (w.empty() || w.size() > 3) return false;
+    const bool minus = !w.empty() && w[0] == '-';
+    if (minus) w.remove_prefix(1);
+    if (w.empty() || w.size() > 5) return false;
     int v = 0;
     for (char c : w) {
         if (c < '0' || c > '9') return false;
         v = v * 10 + (c - '0');
     }
+    if (minus) v = -v;
     if (v < lo || v > hi) return false;
     *out = v;
     return true;
@@ -189,6 +203,41 @@ std::optional<Settings> settings_parse(std::string_view text, std::string* error
 Size resolution_size(std::uint8_t resolution) {
     static const Size kSizes[] = {{1024, 768}, {1152, 864}, {1280, 960}, {1280, 1024}, {1600, 1200}};
     return kSizes[resolution < 5 ? resolution : 0];
+}
+
+WindowRect window_clamp(WindowRect r, const WindowRect& usable, int title_h) {
+    r.w = std::max(1, std::min(r.w, usable.w));
+    r.h = std::max(1, std::min(r.h, usable.h - title_h));
+    r.x = std::max(usable.x, std::min(r.x, usable.x + usable.w - r.w));
+    r.y = std::max(usable.y + title_h, std::min(r.y, usable.y + usable.h - r.h));
+    return r;
+}
+
+WindowPlace window_place(const Settings& s, const std::vector<WindowRect>& usable, int title_h) {
+    WindowPlace out;
+    out.maximized = s.window_maximized;
+    const bool remembered = s.window_w > 0 && s.window_h > 0;
+    if (remembered) {
+        out.r = {s.window_x, s.window_y, s.window_w, s.window_h};
+    } else {
+        const Size size = resolution_size(s.resolution);
+        out.r.w = size.w, out.r.h = size.h;
+    }
+    if (usable.empty()) return out;
+    if (remembered) {
+        const int mx = s.window_x + s.window_w / 2;  // the middle of the top edge: the title bar can be reached
+        for (const WindowRect& d : usable) {
+            if (mx >= d.x && mx < d.x + d.w && s.window_y >= d.y && s.window_y < d.y + d.h) {
+                out.r = window_clamp(out.r, d, title_h);
+                return out;
+            }
+        }
+    }
+    const WindowRect& primary = usable.front();
+    out.r.x = primary.x + (primary.w - out.r.w) / 2;
+    out.r.y = primary.y + title_h + (primary.h - title_h - out.r.h) / 2;
+    out.r = window_clamp(out.r, primary, title_h);
+    return out;
 }
 
 // The x87 arithmetic of the original, done in double. Changed on purpose (owner, 2026-10-15): the original truncates

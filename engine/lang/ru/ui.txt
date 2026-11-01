@@ -11,6 +11,8 @@ menu.build_label_developer = Entente Engine {version} (сборка разраб
 menu.check_updates = Проверить обновления
 #@ en=2c6f1c src=ai
 options.fits_window = По размеру окна
+#@ en=d15f88 src=ai
+options.full_screen = Полный экран
 #@ en=0e06dc src=ai
 options.interface_scale = Масштаб интерфейса
 #@ en=9280fc src=ai

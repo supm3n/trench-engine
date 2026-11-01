@@ -454,12 +454,19 @@ std::optional<Archive> open_archive(Frontend& f, const std::string& path, std::s
 }
 
 void paint_words(Frontend& f, const Archive& a, const std::string& name, Image& img);  // below
+void paint_full_screen(Frontend& f, Image& img);                                       // below
+
+// Ours: the name of the Options resolution picker's Full screen item (ui/painted.hpp painted_full_screen), loaded
+// through load_picture like a picture of Options.les so it is painted again when the language changes.
+constexpr const char* kFullScreenItem = "full screen";
+constexpr int kFullScreenSel = 5;  // its place in the picker, after the five sizes
 
 
 
 std::optional<Picture> load_picture(Frontend& f, const Archive& a, const std::string& name, bool keyed,
                                     std::string* error) {
-    const LesEntry* e = find_entry(a.table, name);
+    const bool full_screen = name == kFullScreenItem;
+    const LesEntry* e = find_entry(a.table, full_screen ? painted_full_screen().picture : name);
     if (!e) {
         *error = a.path + ": no picture " + name;
         return std::nullopt;
@@ -471,7 +478,11 @@ std::optional<Picture> load_picture(Frontend& f, const Archive& a, const std::st
         *error = a.path + "/" + name + ": " + *error;
         return std::nullopt;
     }
-    paint_words(f, a, name, *img);
+    if (full_screen) {
+        paint_full_screen(f, *img);
+    } else {
+        paint_words(f, a, name, *img);
+    }
     if (keyed) {
         for (std::size_t i = 0; i + 3 < img->rgba.size(); i += 4) {
             if (img->rgba[i] == 255 && img->rgba[i + 1] == 0 && img->rgba[i + 2] == 255) img->rgba[i + 3] = 0;
@@ -489,7 +500,7 @@ std::optional<Picture> load_picture(Frontend& f, const Archive& a, const std::st
     SDL_SetTextureScaleMode(p.tex.get(), SDL_SCALEMODE_NEAREST);  // DirectDraw's stretching blit
     SDL_SetTextureBlendMode(p.tex.get(), keyed ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
     p.w = img->width, p.h = img->height;
-    if (!painted_find(a.path, name).empty()) p.archive = a.path, p.name = name, p.keyed = keyed;
+    if (full_screen || !painted_find(a.path, name).empty()) p.archive = a.path, p.name = name, p.keyed = keyed;
     return p;
 }
 
@@ -629,6 +640,13 @@ bool open_options(Frontend& f, std::string* error) {
     list.w = list.field_w + list.list_button.w / 3;
     list.h = list.items[0].h;
     list.sel = std::min<int>(f.edit.resolution, static_cast<int>(list.items.size()) - 1);
+#ifndef __EMSCRIPTEN__
+    // Ours: a sixth item, Full screen (borderless, Settings::fullscreen, as Alt+Enter); a size is a window that big.
+    auto full = load_picture(f, *a, kFullScreenItem, true, error);
+    if (!full) return false;
+    list.items.push_back(std::move(*full));
+    if (f.edit.fullscreen) list.sel = kFullScreenSel;
+#endif
 #ifdef __EMSCRIPTEN__
     // Ours: the page always fits the browser window, so the choice has no effect. The list stays (OptionsOk reads it,
     // so the stored value is kept) but is hidden, and a label says what happens instead (docs/web.md).
@@ -745,6 +763,15 @@ void paint_words(Frontend& f, const Archive& a, const std::string& name, Image& 
         painted_apply(img, *w, under, text,
                       [&f](PaintFont font, int em, std::string_view s) { return paint_raster(f, font, em, s); });
     }
+}
+
+// Ours: the resolution picker's Full screen item, in every language (English too).
+void paint_full_screen(Frontend& f, Image& img) {
+    const std::string text = ours(f, painted_full_screen().key);
+    check_drawn(f.lang, text, std::source_location::current());
+    painted_full_screen_blank(img);
+    painted_draw(img, painted_full_screen(), text,
+                 [&f](PaintFont font, int em, std::string_view s) { return paint_raster(f, font, em, s); });
 }
 
 // How much lower a line of a smaller font is drawn so that its baseline stays where the original font's is.
@@ -3197,7 +3224,11 @@ void do_action(Frontend& f, Widget& w) {
         case Action::SoundVolume: f.edit.sound_volume = volume_from_slider(w.pos); break;
         case Action::OptionsOk: {
             const Window& win = f.stack.back();
-            f.edit.resolution = static_cast<std::uint8_t>(find(win, Kind::DropList, 0)->sel);
+            const int sel = find(win, Kind::DropList, 0)->sel;
+#ifndef __EMSCRIPTEN__
+            f.edit.fullscreen = sel == kFullScreenSel;  // ours: the sixth item; the size stays for the window
+#endif
+            if (sel != kFullScreenSel) f.edit.resolution = static_cast<std::uint8_t>(sel);
             f.edit.speed_ms = speed_from_slider(find(win, Kind::Slider, 2)->pos);
             f.edit.music_volume = volume_from_slider(find(win, Kind::Slider, 0)->pos);
             f.settings = f.edit;
@@ -3788,7 +3819,10 @@ void frontend_language_changed(Frontend& f) {
     };
     for (Window& win : f.stack) {
         repaint(win.back);
-        for (Widget& w : win.widgets) repaint(w.pic);
+        for (Widget& w : win.widgets) {
+            repaint(w.pic);
+            for (Picture& p : w.items) repaint(p);  // ours: the resolution picker's Full screen
+        }
     }
 }
 
@@ -4327,6 +4361,22 @@ void frontend_draw(Frontend& f) {
 }
 
 const Settings& frontend_settings(const Frontend& f) { return f.settings; }
+
+void frontend_set_fullscreen(Frontend& f, bool on) {
+    f.settings.fullscreen = f.edit.fullscreen = on;
+    for (Window& win : f.stack) {  // the Options resolution picker: Full screen, or back to the size it showed
+        if (win.screen != Screen::Options) continue;
+        for (Widget& c : win.widgets) {
+            if (c.kind != Kind::DropList || static_cast<int>(c.items.size()) <= kFullScreenSel) continue;
+            if (on && c.sel != kFullScreenSel) {
+                c.row = c.sel;
+                c.sel = kFullScreenSel;
+            } else if (!on && c.sel == kFullScreenSel) {
+                c.sel = c.row >= 0 && c.row < kFullScreenSel ? c.row : f.edit.resolution;
+            }
+        }
+    }
+}
 
 int frontend_take_clicks(Frontend& f) {
     const int n = f.clicks;

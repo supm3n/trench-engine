@@ -125,7 +125,9 @@ The original's saves lose or change several things on loading. Entente Engine's 
 
 ## Interface and comfort
 
-- **Any window size,** widescreen and full screen. The menus keep their shape with bars at the sides.
+- **Any window size,** widescreen and full screen. The menus keep their shape with bars at the sides. The window
+  remembers its size, place and whether it was maximised; Full screen is in the Screen Resolution box, and Alt+Enter
+  switches at any time.
 - **Interface scale** Auto, 1x to 4x, for big screens (Auto gives double size on 2560 x 1440 and 4K). Text is always
   drawn sharp at full size.
 - **Mouse wheel zoom** around the pointer, the main-row minus and equals keys, and Backspace back to your start zoom

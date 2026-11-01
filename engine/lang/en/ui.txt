@@ -10,8 +10,9 @@ menu.build_label = Entente Engine {version}
 menu.build_label_developer = Entente Engine {version} (developer build)
 menu.check_updates = Check for updates
 
-# Options: the browser has no screen resolution to choose
+# Options: the browser has no screen resolution to choose; the desktop's picker ends with Full screen
 options.fits_window = Fits the window
+options.full_screen = Full screen
 
 # Game options, our rows (docs/frontend.md 4.4)
 options.interface_scale = Interface scale
