@@ -1,0 +1,517 @@
+# lang/ru/ui.txt, written by tools/lang.py (docs/languages.md 6.1).
+# '#@ en=<hash of the English> src=<where it came from> review=<why to look again>'; the engine skips these lines.
+
+#@ en=531be5 src=ai
+version.game = Антанта v 2.0
+#@ en=c55c29 src=ai ok=english
+menu.build_label = Entente Engine {version}
+#@ en=d6d8fe src=ai
+menu.build_label_developer = Entente Engine {version} (сборка разработчика)
+#@ en=736b90 src=ai
+menu.check_updates = Проверить обновления
+#@ en=2c6f1c src=ai
+options.fits_window = По размеру окна
+#@ en=0e06dc src=ai
+options.interface_scale = Масштаб интерфейса
+#@ en=9280fc src=ai
+options.interface_pictures = Графика интерфейса
+#@ en=33444e src=ai
+options.world_zoom = Масштаб карты
+#@ en=c614ba src=ai
+options.auto = Авто
+#@ en=b6a8e1 src=ai
+options.scale = {n}x
+#@ en=75240a src=ai
+options.pictures_between = Средне
+#@ en=69fa74 src=ai
+options.pictures_crisp = Чётко
+#@ en=7f93ca src=ai
+options.pictures_smooth = Сглаженно
+#@ en=96d10b src=ai
+options.network_heading = СЕТЕВЫЕ ИГРЫ (если Вы хост)
+#@ en=86a34e src=ai
+options.autosave_every = Автосохранение каждые
+#@ en=2126b6 src=ai
+options.seat_kept = Место хранится при обрыве
+#@ en=b0861c src=ai
+options.computer_takes_over = Управление компьютеру
+#@ en=06467d src=ai
+options.minutes.one = {n} минуту
+#@ en=5bac86 src=ai
+options.minutes.other = {n} минуты
+#@ en=091882 src=ai
+options.whole_game = Всю игру
+#@ en=148ba2 src=ai
+options.nobody = Никто
+#@ en=736b90 src=ai
+options.check_updates = Проверять обновления
+#@ en=e0049a src=ai
+options.on = Вкл.
+#@ en=e3de5a src=ai
+options.off = Выкл.
+#@ en=fc8713 src=ai
+options.simulation_thread = Поток симуляции
+#@ en=89b86a src=ai
+options.language = Язык
+#@ en=27c5ed src=ai
+museum.pictures_failed = Не удалось загрузить изображения музея. Пожалуйста, повторите попытку чуть позже.
+#@ en=d86ab8 src=ai
+museum.files_failed = Не удалось прочитать файлы музея.
+#@ en=2d2cb0 src=ai
+skirmish.speed = Скорость
+#@ en=45e118 src=ai
+skirmish.speed_normal = Обычная
+#@ en=cf606d src=ai
+skirmish.speed_slower = Медленнее
+#@ en=33dcec src=ai
+skirmish.speed_slow = Медленная
+#@ en=73a1f4 src=ai
+skirmish.speed_very_slow = Очень медленная
+#@ en=e31663 src=ai
+skirmish.human = Человек
+#@ en=bb11a8 src=ai
+skirmish.rules = Правила
+#@ en=f6cda5 src=ai ok=english
+skirmish.rules_classic = Entente Engine
+#@ en=c9fa4b src=ai ok=english
+skirmish.rules_plus = Entente Engine Plus
+#@ en=c9bc7b src=ai
+skirmish.rules_plus_tip = Entente Engine Plus: переработанные правила для сражений (исследования делают то, что сказано в их описании, более честные цены и не только). Миссии и кампании всегда идут по правилам Entente Engine.
+#@ en=a6d46a src=ai
+research.plus_war7 = Разрывные пули (+15% к атаке пехоты из винтовки)
+#@ en=2e6818 src=ai
+research.plus_war18 = Унитарный заряд (+20% к скорострельности гаубицы и стационарной гаубицы)
+#@ en=86ea52 src=ai
+research.plus_war20 = Новая оптическая система наведения (+30% к точности и +15% к дальности пушки и гаубицы)
+#@ en=0cebcc src=ai
+research.plus_war23 = Повышенное жалованье танкостроителям (-30% ко времени постройки танков)
+#@ en=b13664 src=ai
+research.plus_war26 = Сварка (-30% ко времени постройки кораблей)
+#@ en=83dc83 src=ai
+research.plus_war1 = Меткая стрельба (+25% к меткости и +10% к дальности пехоты)
+#@ en=4bb603 src=ai
+research.plus_war4 = Офицерская школа (+30% к меткости и +20% к скорострельности офицеров)
+#@ en=4cc072 src=ai
+research.plus_war10 = Противогазы (+80% к защите от газа, в зданиях и на открытой местности)
+#@ en=ec102c src=ai
+research.plus_war16 = Ремонт конского состава (+35% к здоровью и +10% к скорости кавалерии)
+#@ en=2dd26f src=ai
+research.plus_war27 = Стальные каски (пехота меньше страдает от обстрела)
+#@ en=b80e9d src=ai
+research.plus_war28 = Глубокое бурение (+35% нефти)
+#@ en=a24cce src=ai
+research.plus_sci3 = Новый кирпич (+25% к прочности зданий против снарядов)
+#@ en=117518 src=ai
+research.plus_sci4 = Добавки в цемент (+25% к прочности зданий против снарядов)
+#@ en=086e79 src=ai
+research.plus_sci5 = Слоёная кладка (+25% к прочности зданий против снарядов)
+#@ en=70b8e8 src=ai
+research.plus_sci10 = Прочные кирки (+35% золота и железа)
+#@ en=d50eb2 src=ai
+research.plus_sci11 = Новые добавки для плавки руды (+35% золота и железа)
+#@ en=f5993f src=ai
+research.plus_sci19 = Паровые лесопилки (+35% дерева)
+#@ en=34113e src=ai
+research.plus_war2 = Лёгкий пулемёт (пулемётчики перезаряжаются и обучаются на 30% быстрее и передвигаются на 15% быстрее)
+#@ en=f29b57 src=ai
+research.plus_war9 = Воинская повинность (солдаты и офицеры обучаются на 25% быстрее)
+#@ en=00f385 src=ai
+research.plus_war12 = Кавалерийский удар (кавалерия меньше страдает от обстрела)
+#@ en=1abc35 src=ai
+research.plus_sci13 = Газовые снаряды (ещё десять специальных снарядов)
+#@ en=98cb53 src=ai
+research.plus_sci17 = Дезинсекция (лечит все юниты; каждое применение удваивает цену следующего)
+#@ en=83eb61 src=ai
+research.plus_build0 = доты и наблюдательные вышки вмещают вдвое больше бойцов
+#@ en=4e9d93 src=ai
+research.plus_build1 = Ваши здания получают вдвое меньше урона от снарядов
+#@ en=42d994 src=ai
+research.plus_build2 = здоровье Ваших зданий +50%
+#@ en=fca376 src=ai
+research.plus_saw0 = Острые пилы (+30% дерева)
+#@ en=19709a src=ai
+research.plus_saw1 = Больше пильных станков (+60% дерева)
+#@ en=bf2d38 src=ai
+research.plus_oil0 = Повышение жалованья (+30% нефти)
+#@ en=891a3f src=ai
+research.plus_oil1 = Более глубокие скважины (+60% нефти)
+#@ en=61cfa8 src=ai
+research.plus_mine0 = Лучшие кирки (+30% руды)
+#@ en=60148e src=ai
+research.plus_mine1 = Новые шахты (+60% руды)
+#@ en=66be04 src=ai
+research.plus_level_more = Расширение (+50% начальной добычи)
+#@ en=8a2d08 src=ai
+plus.mint = Начать чеканку монет (+50% золота)
+#@ en=170efa src=ai
+plus.mint_after = Идёт чеканка монет (+50% золота)
+#@ en=bc8a46 src=ai
+plus.upkeep = Содержание в минуту
+#@ en=88a440 src=ai
+plus.reload_slow = Медленная перезарядка
+#@ en=a60dd4 src=ai
+plus.reload_slow_why = нет железа, золота или нефти
+#@ en=b4e70f src=ai
+plus.market_price = Цена сейчас: {percent}% от обычной (со временем восстанавливается)
+#@ en=084780 src=ai
+plus.advisor_payback = Исследование: {item}. Окупится за {n} мин
+#@ en=e4d893 src=ai
+plus.advisor_units = Исследование: {item}, для {n} Ваших юнитов
+#@ en=ad3852 src=ai
+plus.advisor_counter = Исследование: {item}, против того, что есть у врага
+#@ en=0bfb66 src=ai
+plus.advisor_upgrade = Апгрейд: {item}. Окупится за {n} мин
+#@ en=190067 src=ai
+plus.advisor_academy = Строится академия для следующего исследования
+#@ en=b18fd0 src=ai
+plus.advisor_power = Больше электричества: исследование {item}
+#@ en=954e63 src=ai
+plus.advisor_power_station = Больше электричества: новая или улучшенная электростанция
+#@ en=9d695c src=ai
+plus.advisor_room = Больше места для юнитов: новое жильё или улучшение жилья
+#@ en=44264b src=ai
+plus.advisor_tower = Усиливается башня или дот под угрозой
+#@ en=843cb4 src=ai
+research.plus_war17 = Штаб управления огнём (артобстрелы, газовые атаки, бомбардировки и разведывательные полёты по вызову из центра города)
+#@ en=3d7e9b src=ai
+strike.barrage = Артобстрел
+#@ en=59fd76 src=ai
+strike.barrage_tip = 40 тяжёлых снарядов падают наугад в круге вокруг выбранной точки примерно за 10 секунд. Они поражают всех, кто там находится, и ваших бойцов тоже
+#@ en=bfa445 src=ai
+strike.creeping = Огневой вал
+#@ en=8ec22b src=ai
+strike.creeping_tip = 60 снарядов движутся по линии от первой выбранной точки ко второй примерно за 18 секунд. Они поражают всех, кто там находится, и ваших бойцов тоже
+#@ en=ad4251 src=ai
+strike.gas = Газовая атака
+#@ en=b94a44 src=ai
+strike.gas_tip = 4 газовых снаряда падают в круге вокруг выбранной точки
+#@ en=a4a0d8 src=ai
+strike.bombing = Бомбардировка
+#@ en=30b22a src=ai
+strike.bombing_tip = Тяжёлые бомбардировщики сбрасывают 24 бомбы по линии от первой выбранной точки ко второй
+#@ en=5d7370 src=ai
+strike.recon = Разведывательный полёт
+#@ en=3aeb10 src=ai
+strike.recon_tip = Самолёт-разведчик примерно на минуту рассеивает туман над широким кругом вокруг выбранной точки, только для вас
+#@ en=2421d8 src=ai
+strike.wait = снова готово через {n} с
+#@ en=f40ecd src=ai
+strike.short = не хватает ресурсов
+#@ en=aa0dd7 src=ai
+strike.need_gas = нужно исследование газа в Академии наук
+#@ en=b8dbcf src=ai
+campaign.not_available = Миссии Антанты и Тройственного союза пока недоступны.
+#@ en=a26518 src=ai
+missions.list_failed = Не удалось открыть список миссий: {reason}
+#@ en=144d5f src=ai
+campaigns.failed = Не удалось открыть кампании: {reason}
+#@ en=f993a6 src=ai
+campaign.missions_failed = Не удалось открыть миссии кампании: {reason}
+#@ en=84e052 src=ai
+mission.start_failed = Не удалось начать миссию: {reason}
+#@ en=931e44 src=ai
+game.start_failed = Не удалось начать игру: {reason}
+#@ en=659fb2 src=ai
+game.restart_failed = Не удалось начать игру заново: {reason}
+#@ en=61dde3 src=ai
+game_menu.restart_unavailable = Начать заново можно миссию, игру, начатую из настроек сражения, или игру, загруженную из сохранения такой игры, сделанного в Entente Engine. Сохранения оригинальной игры не хранят настройки.
+#@ en=5f1e55 src=ai
+save.default_name = Без_имени
+#@ en=2c8d37 src=ai
+save.failed = Не удалось сохранить игру: {reason}
+#@ en=d9b350 src=ai
+load.failed = Не удалось загрузить игру.
+#@ en=8c4e34 src=ai
+load.failed_reason = Не удалось загрузить игру: {reason}
+#@ en=36d0f8 src=ai
+load.not_in_network = В сетевой игре загрузка невозможна.
+#@ en=ab4856 src=ai
+load.original = {name} (оригинал)
+#@ en=5c5697 src=ai
+load.original_info = сохранение оригинальной игры
+#@ en=fcd43c src=ai
+load.unreadable = Этот файл невозможно прочитать.
+#@ en=ef2ed8 src=ai
+load.time_played = Время игры {time}
+#@ en=0e5b3c src=ai
+game.build_more_houses = Стройте больше домов.
+#@ en=f78d30 src=ai
+build.pontoon_gap = Понтонный мост не наведён: в нём был бы разрыв там, где ходят корабли или слишком близко стоит здание.
+#@ en=857594 src=ai
+build.pontoon_wood = Понтонный мост не наведён: нужно {wood} дерева.
+#@ en=0e9eb3 src=ai
+hints.keys = Клавиши нового движка (клавиши оригинала, F12 для режима разработчика):\nЩелчок: выбрать (Shift добавляет). Двойной щелчок: все такого типа на экране.\nA: все Ваши юниты на экране, Ctrl+A на всей карте. Shift+A: Ваши рабочие на экране. Ctrl+F: свободные рабочие.\nZ: выбранные типы на экране (Shift добавляет), Ctrl+Z на всей карте.\nCtrl+1..9: создать группу. 1..9, 0: выбрать её (Shift добавляет, ещё раз: показать её).\nTab: следующий выбранный юнит (или следующее здание того же типа, Ctrl назад). Пробел: показать выбранное.\nНичего не выбрано: E Q R T U W Y выбирают здание, с Ctrl или Shift другое.\nJ: количества на рынке в 0. M: мини-карта. ~: полосы здоровья. F2: прозрачные здания.\nБуквы панели нажимают её кнопки (Shift: как щелчок с Shift). Delete: первый из выбранных.\nPause: пауза. Num + и -: скорость игры x1, x2, x4. F1: окно миссии.\nEsc: отменить постройку, иначе меню игры. Стрелки, край окна или перетаскивание средней кнопкой: прокрутка.
+#@ en=f9db5e src=ai
+network.not_available = Сетевая игра в этой версии недоступна.
+#@ en=345efe src=ai
+net.connection = TCP/IP (LAN или Интернет)
+#@ en=26c5e8 src=ai
+net.type_name = Пожалуйста, введите Ваше имя.
+#@ en=c4a46a src=ai
+net.port_range = Порт: число от 1 до 65535.
+#@ en=d96216 src=ai
+net.typed = {address} (введён)
+#@ en=816ae9 src=ai
+net.row_locked = {row}  (пароль)
+#@ en=e82a12 src=ai
+net.none_found = В этой сети пока не найдено ни одной игры.\nВведите адрес хоста на первой странице или нажмите «Создать» для новой игры.
+#@ en=8fab33 src=ai
+net.saved_game = Сохранённая игра на карте {map}, {when}
+#@ en=ad2c7a src=ai
+net.players = Игроки: {players}
+#@ en=56abf3 src=ai
+net.saved_rejoin = «Присоединиться» снова создаёт её на этом ПК; остальные подключаются и занимают свои места.
+#@ en=0bc18d src=ai
+net.address = Адрес: {address}
+#@ en=54cf69 src=ai
+net.details_on_join = Сведения об игре появятся после подключения.
+#@ en=053c35 src=ai
+net.map = Карта: {map}
+#@ en=77ad3e src=ai
+net.rules = Правила: {rules}
+#@ en=7a9548 src=ai
+net.players_of = Игроки: {n} из {max}
+#@ en=5ff112 src=ai
+net.password_needed = Нужен пароль.
+#@ en=8be3c9 src=ai
+net.password = Пароль
+#@ en=c646e5 src=ai
+net.choose_game = Выберите игру в списке или введите адрес хоста на первой странице.
+#@ en=c49894 src=ai
+net.saved_row = Сохранено: {map} {when}
+#@ en=e7a83a src=ai
+net.back_to = Назад к {address}
+#@ en=cad715 src=ai
+net.game_title = Игра: {name}
+#@ en=cf9b77 src=ai
+net.slot_open = Свободно
+#@ en=f7e9ba src=ai
+net.slot_open_for = Свободно ({name})
+#@ en=2f5612 src=ai
+net.slot_easy = Компьютер: легко
+#@ en=3a374a src=ai
+net.slot_medium = Компьютер: средне
+#@ en=3b4ed5 src=ai
+net.slot_difficult = Компьютер: сложно
+#@ en=1e89ea src=ai
+net.slot_easy.short = ИИ: легко
+#@ en=827d16 src=ai
+net.slot_medium.short = ИИ: средне
+#@ en=650ad3 src=ai
+net.slot_difficult.short = ИИ: сложно
+#@ en=b740d6 src=ai
+net.slot_computer_seat = Компьютер (место {name})
+#@ en=c5e42a src=ai
+net.waiting.one = Ожидается ещё {n} игрок.
+#@ en=e03a77 src=ai
+net.waiting.other = Ожидается ещё {n} игрока.
+#@ en=f4dee8 src=ai
+net.all_in_host = Все на месте. Нажмите «Старт».
+#@ en=ccb466 src=ai
+net.all_in = Все на месте. Хост начинает игру.
+#@ en=e9e731 src=ai
+net.seat_help = Щелчок по свободному месту: за него играет компьютер. Щелчок по игроку: переместить его.
+#@ en=86c0a9 src=ai
+net.seat_move = Выберите свободное место для {name}.
+#@ en=bf0619 src=ai
+net.join_at = Другие подключаются к {address}, порт {port}.
+#@ en=329abf src=ai
+net.this_pc = адрес этого ПК
+#@ en=bbfeb6 src=ai
+net.has_password = У игры есть пароль.
+#@ en=4b8738 src=ai
+net.host_failed = Не удалось создать игру: {reason}
+#@ en=ccb88d src=ai
+net.join_failed = Не удалось подключиться к игре: {reason}
+#@ en=64c32c src=ai
+net.joining = Подключение к {address} ...
+#@ en=2593a2 src=ai
+net.ended = Сетевая игра завершена: {reason}
+#@ en=595c28 src=ai
+net.no_answer = По адресу {address} ни одна игра не ответила. Проверьте, что у хозяина игра открыта и что брандмауэр Windows разрешает Entente Engine.
+#@ en=dd0f10 src=ai
+update.newest = У Вас самая новая версия, Entente Engine {version}.
+#@ en=56e2f5 src=ai
+update.later = Позже
+#@ en=3347a1 src=ai
+update.on_releases = Вышел Entente Engine {version} (у Вас {current}).\n\nЕго можно скачать на странице проекта на GitHub. Открыть эту страницу сейчас?
+#@ en=308f8e src=ai
+update.open_page = Открыть страницу
+#@ en=c6a994 src=ai
+update.on_releases_failed = Не удалось узнать у GitHub самую новую версию. Попробуйте позже.
+#@ en=74118b src=ai
+folder.intro = Entente Engine нужны файлы игры The Entente Gold, но сам он не смог найти их на этом ПК.\n\nПожалуйста, выберите папку, в которую установлена The Entente Gold (папку, в которой есть Antanta.exe и папка Data).
+#@ en=e6e46b src=ai
+folder.wrong = В этой папке нет игры The Entente Gold:\n{folder}\n\nВ ней отсутствует файл {file}.\n\nПожалуйста, выберите папку, в которую установлена The Entente Gold (папку, в которой есть Antanta.exe и папка Data).
+#@ en=e31d80 src=ai
+folder.choose = Выбрать папку
+#@ en=af3575 src=ai
+folder.choose_another = Выбрать другую папку
+#@ en=1a2285 src=ai
+box.quit = Выход
+#@ en=997e3a src=ai
+crash.box = Entente Engine аварийно завершил работу. Просим прощения!\n\nКраткий отчёт сохранён в файле\n{path}\n\nПожалуйста, отправьте этот файл тому, от кого Вы получили игру.
+#@ en=883b15 src=ai
+start.failed = Entente Engine не удалось запустить.\n\nПричина записана в самом новом файле папки %APPDATA%\\EntenteEngine\\logs (вставьте этот путь в адресную строку окна Проводника). Пожалуйста, отправьте этот файл тому, от кого Вы получили игру.
+#@ en=9627c2 src=ai
+reason.net_protocol = версия протокола {theirs}, у сервера {ours}
+#@ en=332495 src=ai
+reason.net_build = сборка {theirs}, у сервера {ours}
+#@ en=a29205 src=ai
+reason.net_in_game = уже в игре
+#@ en=0ebd3d src=ai
+reason.net_server_full = на сервере нет места для новых игр
+#@ en=116ebe src=ai
+reason.net_no_position = для места игрока на карте нет позиции
+#@ en=1a0552 src=ai
+reason.net_too_many = игроков-людей больше, чем позволяет сервер
+#@ en=940ec6 src=ai
+reason.net_not_net_save = это не сохранение сетевой игры
+#@ en=d9e32a src=ai
+reason.net_not_net_save_why = это не сохранение сетевой игры: {reason}
+#@ en=6e5527 src=ai
+reason.net_seats_differ = места в сохранении не совпадают
+#@ en=780cd3 src=ai
+reason.net_host_slot = место хоста не принадлежит человеку
+#@ en=42d461 src=ai
+reason.net_no_game = такой открытой игры нет
+#@ en=4a8559 src=ai
+reason.net_files_differ = Ваши файлы игры отличаются от файлов хоста
+#@ en=d8c64f src=ai
+reason.net_wrong_password = неверный пароль
+#@ en=9e99ff src=ai
+reason.net_no_free_slot = нет свободного места
+#@ en=0f0849 src=ai
+reason.net_no_seat = нет такого места, чтобы вернуться
+#@ en=10a394 src=ai
+reason.net_seat_given = место отдано компьютеру до конца игры
+#@ en=abb576 src=ai
+reason.net_nobody_left = в игре не осталось никого, кому это отправить
+#@ en=3aafae src=ai
+reason.net_host_starts = только хост начинает игру, и только один раз
+#@ en=5178c1 src=ai
+reason.net_not_all_taken = заняты не все места игроков
+#@ en=56ad35 src=ai
+reason.net_host_left = хост вышел
+#@ en=e9d5b9 src=ai
+reason.net_no_connection = нет связи
+#@ en=2d3ae0 src=ai
+reason.net_closed = соединение закрыто
+#@ en=ad3f9a src=ai
+reason.net_dropped = связь потеряна
+#@ en=241e1c src=ai
+reason.net_all_computer = все места этой игры отданы компьютеру
+#@ en=9be46e src=ai
+reason.net_save_not_net = {path} не является сохранением сетевой игры
+#@ en=0d97c0 src=ai
+reason.save_no_game = нет игры для сохранения
+#@ en=6949a0 src=ai
+reason.save_no_folder = нет папки для сохранений
+#@ en=c32cba src=ai
+reason.save_not_packed = не удалось упаковать игру
+#@ en=14c0c2 src=ai
+reason.restart_no_skirmish = нет сражения для перезапуска
+#@ en=5faa1b src=ai
+reason.map_size = размер {path} не совпадает с размером карты этого сохранения
+#@ en=18e935 src=ai
+lua.nivel_units.one = У нас: {n} юнит.
+#@ en=18e935 src=ai
+lua.nivel_units.other = У нас: {n} юнита.
+#@ en=18e935 src=ai
+lua.nivel_units.few = У нас: {n} юнита.
+#@ en=18e935 src=ai
+lua.nivel_units.many = У нас: {n} юнитов.
+#@ en=e03a77 src=ai
+net.waiting.few = Ожидается ещё {n} игрока.
+#@ en=e03a77 src=ai
+net.waiting.many = Ожидается ещё {n} игроков.
+#@ en=5bac86 src=ai
+options.minutes.few = {n} минуты
+#@ en=5bac86 src=ai
+options.minutes.many = {n} минут
+#@ en=accdd5 src=ai
+pic.single_player = Одиночная игра
+#@ en=21bd03 src=ai
+pic.multiplayer = Сетевая игра
+#@ en=802aa6 src=ai
+pic.load_game = Загрузить игру
+#@ en=6bf5da src=ai
+pic.options = Настройки
+#@ en=69d9f3 src=ai
+pic.museum = Музей
+#@ en=dd3db9 src=ai
+pic.quit_game = Выход
+#@ en=01a23a src=ai
+pic.campaigns = Кампании
+#@ en=323ea3 src=ai
+pic.missions = Миссии
+#@ en=7e2eac src=ai
+pic.random_maps = Случайные карты
+#@ en=b52b36 src=ai
+pic.back = Назад
+#@ en=ddcb77 src=ai
+pic.load = Загрузить
+#@ en=efc007 src=ai
+pic.save = Сохранить
+#@ en=7a85f4 src=ai
+pic.plate_ok = ок
+#@ en=61cc55 src=ai
+pic.add = Добавить
+#@ en=f6fdbe src=ai
+pic.delete = Удалить
+#@ en=2e0262 src=ai
+pic.continue = Продолжить
+#@ en=bc9819 src=ai
+pic.next = Далее
+#@ en=e96fea src=ai
+pic.prev = Назад
+#@ en=952f37 src=ai
+pic.start = Начать
+#@ en=6e157c src=ai
+pic.create = Создать
+#@ en=e0d731 src=ai
+pic.join = Войти
+#@ en=5397e0 src=ai
+pic.yes = Да
+#@ en=816c52 src=ai
+pic.no = Нет
+#@ en=b0a982 src=ai
+pic.ok = Ок
+#@ en=77dfd2 src=ai
+pic.cancel = Отмена
+#@ en=bbfa77 src=ai
+pic.close = Закрыть
+#@ en=7ce298 src=ai
+pic.game_options = Настройки игры
+#@ en=804967 src=ai
+pic.back_to_game = Вернуться в игру
+#@ en=f0e83f src=ai
+pic.restart_mission = Начать заново
+#@ en=52bcd0 src=ai
+pic.return_to_menu = Выйти в меню
+#@ en=f760e3 src=ai
+pic.save_game = Сохранить игру
+#@ en=c7f73b src=ai
+pic.settings = Настройки
+#@ en=dbc874 src=ai
+pic.close_caps = ЗАКРЫТЬ
+#@ en=1992d5 src=ai
+pic.next_caps = ДАЛЕЕ
+#@ en=b231db src=ai
+pic.prev_caps = НАЗАД
+#@ en=af52ad src=ai
+pic.game_speed = Скорость\nигры
+#@ en=99f86f src=ai
+pic.music_volume = Громкость\nмузыки
+#@ en=31a2d5 src=ai
+pic.sfx_volume = Громкость\nэффектов
+#@ en=22e11c src=ai
+pic.screen_resolution = Разрешение\nэкрана
+#@ en=e42124 src=ai
+pic.select_campaign = Выбор кампании
+#@ en=5722b3 src=ai
+pic.load_mission = Загрузка миссии
+#@ en=99d29b src=ai
+pic.diplomacy = Дипломатия
+#@ en=939150 src=ai
+pic.game_menu = Меню игры

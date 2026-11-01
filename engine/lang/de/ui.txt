@@ -1,0 +1,507 @@
+# lang/de/ui.txt, written by tools/lang.py (docs/languages.md 6.1).
+# '#@ en=<hash of the English> src=<where it came from> review=<why to look again>'; the engine skips these lines.
+
+#@ en=531be5 src=ai
+version.game = Entente v 2.0
+#@ en=c55c29 src=ai
+menu.build_label = Entente Engine {version}
+#@ en=d6d8fe src=ai
+menu.build_label_developer = Entente Engine {version} (Entwicklerversion)
+#@ en=736b90 src=ai
+menu.check_updates = Nach Updates suchen
+#@ en=2c6f1c src=ai
+options.fits_window = Passt ins Fenster
+#@ en=0e06dc src=ai
+options.interface_scale = Oberflächengröße
+#@ en=9280fc src=ai
+options.interface_pictures = Oberflächenbilder
+#@ en=33444e src=ai
+options.world_zoom = Kartenzoom
+#@ en=c614ba src=ai
+options.auto = Auto
+#@ en=b6a8e1 src=ai
+options.scale = {n}x
+#@ en=75240a src=ai
+options.pictures_between = Mittel
+#@ en=69fa74 src=ai
+options.pictures_crisp = Scharf
+#@ en=7f93ca src=ai
+options.pictures_smooth = Weich
+#@ en=96d10b src=ai
+options.network_heading = NETZWERKSPIELE (als Gastgeber)
+#@ en=86a34e src=ai
+options.autosave_every = Autospeichern alle
+#@ en=2126b6 src=ai
+options.seat_kept = Platz gehalten nach Abbruch
+#@ en=b0861c src=ai
+options.computer_takes_over = Computer übernimmt
+#@ en=06467d src=ai
+options.minutes.one = {n} Minute
+#@ en=5bac86 src=ai
+options.minutes.other = {n} Minuten
+#@ en=091882 src=ai
+options.whole_game = Ganzes Spiel
+#@ en=148ba2 src=ai
+options.nobody = Niemand
+#@ en=736b90 src=ai
+options.check_updates = Nach Updates suchen
+#@ en=e0049a src=ai
+options.on = An
+#@ en=e3de5a src=ai
+options.off = Aus
+#@ en=fc8713 src=ai
+options.simulation_thread = Simulations-Thread
+#@ en=89b86a src=ai
+options.language = Sprache
+#@ en=27c5ed src=ai
+museum.pictures_failed = Die Museumsbilder konnten nicht geladen werden. Bitte versuchen Sie es gleich noch einmal.
+#@ en=d86ab8 src=ai
+museum.files_failed = Die Museumsdateien konnten nicht gelesen werden.
+#@ en=2d2cb0 src=ai
+skirmish.speed = Tempo
+#@ en=45e118 src=ai
+skirmish.speed_normal = Normal
+#@ en=cf606d src=ai
+skirmish.speed_slower = Langsamer
+#@ en=33dcec src=ai
+skirmish.speed_slow = Langsam
+#@ en=73a1f4 src=ai
+skirmish.speed_very_slow = Sehr langsam
+#@ en=e31663 src=ai
+skirmish.human = Mensch
+#@ en=bb11a8 src=ai
+skirmish.rules = Regeln
+#@ en=f6cda5 src=ai
+skirmish.rules_classic = Entente Engine
+#@ en=c9fa4b src=ai
+skirmish.rules_plus = Entente Engine Plus
+#@ en=c9bc7b src=ai
+skirmish.rules_plus_tip = Entente Engine Plus: überarbeitete Regeln für Gefechte (Forschung, die tut, was ihr Text sagt, fairere Kosten und mehr). Missionen und Feldzüge verwenden immer Entente Engine.
+#@ en=a6d46a src=ai
+research.plus_war7 = Explosivgeschosse (+15% Gewehrangriff der Infanterie)
+#@ en=2e6818 src=ai
+research.plus_war18 = Einheitspatrone (+20% Feuerrate der Haubitze und der festen Haubitze)
+#@ en=86ea52 src=ai
+research.plus_war20 = Neue Zieloptik (+30% Treffsicherheit und +15% Reichweite der Kanone und der Haubitze)
+#@ en=0cebcc src=ai
+research.plus_war23 = Höherer Lohn für Panzerbauer (-30% Bauzeit der Panzer)
+#@ en=b13664 src=ai
+research.plus_war26 = Schweißen (-30% Bauzeit der Schiffe)
+#@ en=83dc83 src=ai
+research.plus_war1 = Schießausbildung (+25% Treffsicherheit und +10% Reichweite der Infanterie)
+#@ en=4bb603 src=ai
+research.plus_war4 = Offiziersschule (+30% Treffsicherheit und +20% Feuerrate der Offiziere)
+#@ en=4cc072 src=ai
+research.plus_war10 = Gasmasken (+80% Gasschutz, in Gebäuden und im Freien)
+#@ en=ec102c src=ai
+research.plus_war16 = Remonten (+35% Gesundheit und +10% Tempo der Kavallerie)
+#@ en=2dd26f src=ai
+research.plus_war27 = Stahlhelme (die Infanterie leidet weniger unter Beschuss)
+#@ en=b80e9d src=ai
+research.plus_war28 = Tiefbohrung (+35% Öl)
+#@ en=a24cce src=ai
+research.plus_sci3 = Neue Ziegel (+25% Gebäudehaltbarkeit gegen Beschuss)
+#@ en=117518 src=ai
+research.plus_sci4 = Zementzusätze (+25% Gebäudehaltbarkeit gegen Beschuss)
+#@ en=086e79 src=ai
+research.plus_sci5 = Geschichtetes Mauerwerk (+25% Gebäudehaltbarkeit gegen Beschuss)
+#@ en=70b8e8 src=ai
+research.plus_sci10 = Haltbarere Spitzhacken (+35% Gold und Eisen)
+#@ en=d50eb2 src=ai
+research.plus_sci11 = Neue Zusätze zum Erzschmelzen (+35% Gold und Eisen)
+#@ en=f5993f src=ai
+research.plus_sci19 = Dampfsägewerke (+35% Holz)
+#@ en=34113e src=ai
+research.plus_war2 = Leichtes Maschinengewehr (Maschinengewehrschützen laden und werden 30% schneller ausgebildet, ihr Tempo steigt um 15%)
+#@ en=f29b57 src=ai
+research.plus_war9 = Wehrpflicht (Soldaten und Offiziere werden 25% schneller ausgebildet)
+#@ en=00f385 src=ai
+research.plus_war12 = Schocktaktik der Kavallerie (die Kavallerie leidet weniger unter Beschuss)
+#@ en=1abc35 src=ai
+research.plus_sci13 = Gasgranaten (zehn weitere Spezialgranaten)
+#@ en=98cb53 src=ai
+research.plus_sci17 = Entlausung (behandelt alle Einheiten; jede Anwendung verdoppelt den Preis der nächsten)
+#@ en=83eb61 src=ai
+research.plus_build0 = Bunker und Wachtürme fassen doppelt so viele Männer
+#@ en=4e9d93 src=ai
+research.plus_build1 = Ihre Gebäude nehmen durch Beschuss nur halben Schaden
+#@ en=42d994 src=ai
+research.plus_build2 = Gesundheit Ihrer Gebäude +50%
+#@ en=fca376 src=ai
+research.plus_saw0 = Schärfere Sägen (+30% Holz)
+#@ en=19709a src=ai
+research.plus_saw1 = Mehr Sägebänke (+60% Holz)
+#@ en=bf2d38 src=ai
+research.plus_oil0 = Höhere Löhne (+30% Öl)
+#@ en=891a3f src=ai
+research.plus_oil1 = Tiefere Bohrlöcher (+60% Öl)
+#@ en=61cfa8 src=ai
+research.plus_mine0 = Bessere Spitzhacken (+30% Erz)
+#@ en=60148e src=ai
+research.plus_mine1 = Neue Stollen (+60% Erz)
+#@ en=66be04 src=ai
+research.plus_level_more = Ausbau (+50% der Anfangsleistung)
+#@ en=8a2d08 src=ai
+plus.mint = Münzprägung starten (+50% Gold)
+#@ en=170efa src=ai
+plus.mint_after = Münzprägung läuft (+50% Gold)
+#@ en=bc8a46 src=ai
+plus.upkeep = Unterhalt pro Minute
+#@ en=88a440 src=ai
+plus.reload_slow = Lädt langsam nach
+#@ en=a60dd4 src=ai
+plus.reload_slow_why = kein Eisen, Gold oder Öl
+#@ en=b4e70f src=ai
+plus.market_price = Preis jetzt: {percent}% des Normalpreises (er erholt sich mit der Zeit)
+#@ en=084780 src=ai
+plus.advisor_payback = Forschung: {item}. Zahlt sich in {n} Min. aus
+#@ en=e4d893 src=ai
+plus.advisor_units = Forschung: {item}, für {n} Ihrer Einheiten
+#@ en=ad3852 src=ai
+plus.advisor_counter = Forschung: {item}, gegen das, was der Feind hat
+#@ en=0bfb66 src=ai
+plus.advisor_upgrade = Verbesserung: {item}. Zahlt sich in {n} Min. aus
+#@ en=190067 src=ai
+plus.advisor_academy = Eine Akademie für die nächste Forschung wird gebaut
+#@ en=b18fd0 src=ai
+plus.advisor_power = Mehr Strom: Forschung {item}
+#@ en=954e63 src=ai
+plus.advisor_power_station = Mehr Strom: ein neues oder verbessertes Kraftwerk
+#@ en=9d695c src=ai
+plus.advisor_room = Mehr Platz für Einheiten: eine neue Unterkunft oder eine Verbesserung der Unterkunft
+#@ en=44264b src=ai
+plus.advisor_tower = Ein bedrohter Turm oder Bunker wird verstärkt
+#@ en=843cb4 src=ai
+research.plus_war17 = Feuerleitstab (Artilleriefeuer, Gasangriffe, Bombenangriffe und Aufklärungsflüge, angefordert vom Stadtzentrum)
+#@ en=3d7e9b src=ai
+strike.barrage = Artilleriefeuer
+#@ en=59fd76 src=ai
+strike.barrage_tip = 40 schwere Granaten schlagen in etwa 10 Sekunden zufällig in einem Kreis um den gewählten Punkt ein. Sie treffen alle dort, auch Ihre eigenen Männer
+#@ en=bfa445 src=ai
+strike.creeping = Feuerwalze
+#@ en=8ec22b src=ai
+strike.creeping_tip = 60 Granaten wandern in etwa 18 Sekunden entlang einer Linie vom ersten gewählten Punkt zum zweiten. Sie treffen alle dort, auch Ihre eigenen Männer
+#@ en=ad4251 src=ai
+strike.gas = Gasangriff
+#@ en=b94a44 src=ai
+strike.gas_tip = 4 Gasgranaten schlagen in einem Kreis um den gewählten Punkt ein
+#@ en=a4a0d8 src=ai
+strike.bombing = Bombenangriff
+#@ en=30b22a src=ai
+strike.bombing_tip = Schwere Bomber werfen 24 Bomben entlang einer Linie vom ersten gewählten Punkt zum zweiten ab
+#@ en=5d7370 src=ai
+strike.recon = Aufklärungsflug
+#@ en=3aeb10 src=ai
+strike.recon_tip = Ein Aufklärungsflugzeug lichtet etwa eine Minute lang den Nebel über einem weiten Kreis um den gewählten Punkt, nur für Sie
+#@ en=2421d8 src=ai
+strike.wait = wieder bereit in {n} s
+#@ en=f40ecd src=ai
+strike.short = nicht genug Rohstoffe
+#@ en=aa0dd7 src=ai
+strike.need_gas = erfordert die Gasforschung der Akademie der Wissenschaften
+#@ en=b8dbcf src=ai
+campaign.not_available = Die Missionen der Entente und des Dreibunds gibt es noch nicht.
+#@ en=a26518 src=ai
+missions.list_failed = Die Missionsliste konnte nicht geöffnet werden: {reason}
+#@ en=144d5f src=ai
+campaigns.failed = Die Feldzüge konnten nicht geöffnet werden: {reason}
+#@ en=f993a6 src=ai
+campaign.missions_failed = Die Missionen des Feldzugs konnten nicht geöffnet werden: {reason}
+#@ en=84e052 src=ai
+mission.start_failed = Die Mission konnte nicht gestartet werden: {reason}
+#@ en=931e44 src=ai
+game.start_failed = Das Spiel konnte nicht gestartet werden: {reason}
+#@ en=659fb2 src=ai
+game.restart_failed = Das Spiel konnte nicht neu gestartet werden: {reason}
+#@ en=61dde3 src=ai
+game_menu.restart_unavailable = Neustart geht bei einer Mission, einem Spiel aus der Gefechtseinstellung oder einem Spielstand eines solchen Spiels, der mit Entente Engine gespeichert wurde. Die Spielstände des Originals enthalten die Einstellungen nicht.
+#@ en=5f1e55 src=ai
+save.default_name = Ohne_Namen
+#@ en=2c8d37 src=ai
+save.failed = Das Spiel konnte nicht gespeichert werden: {reason}
+#@ en=d9b350 src=ai
+load.failed = Das Spiel konnte nicht geladen werden.
+#@ en=8c4e34 src=ai
+load.failed_reason = Das Spiel konnte nicht geladen werden: {reason}
+#@ en=36d0f8 src=ai
+load.not_in_network = Im Netzwerkspiel kann kein Spielstand geladen werden.
+#@ en=ab4856 src=ai
+load.original = {name} (Original)
+#@ en=5c5697 src=ai
+load.original_info = ein Spielstand des Originals
+#@ en=fcd43c src=ai
+load.unreadable = Diese Datei ist nicht lesbar.
+#@ en=ef2ed8 src=ai
+load.time_played = Spielzeit {time}
+#@ en=0e5b3c src=ai
+game.build_more_houses = Bauen Sie mehr Häuser.
+#@ en=f78d30 src=ai
+build.pontoon_gap = Pontonbrücke nicht gelegt: Sie hätte eine Lücke, wo Schiffe fahren oder ein Gebäude zu nah steht.
+#@ en=857594 src=ai
+build.pontoon_wood = Pontonbrücke nicht gelegt: Sie braucht {wood} Holz.
+#@ en=0e9eb3 src=ai
+hints.keys = Tasten der neuen Engine (die des Originals, F12 für die Entwickleransicht):\nKlick: auswählen (Shift fügt hinzu). Doppelklick: alle dieses Typs auf dem Bildschirm.\nA: alle Ihre Einheiten auf dem Bildschirm, Ctrl+A auf der Karte. Shift+A: Ihre Arbeiter auf dem Bildschirm. Ctrl+F: untätige Arbeiter.\nZ: die gewählten Typen auf dem Bildschirm (Shift fügt hinzu), Ctrl+Z auf der Karte.\nCtrl+1..9: Gruppe bilden. 1..9, 0: sie auswählen (Shift fügt hinzu, nochmals drücken: hinsehen).\nTab: nächste gewählte Einheit (oder das nächste Gebäude des Typs, Ctrl zurück). Space: zur Auswahl springen.\nNichts gewählt: E Q R T U W Y wählen ein Gebäude, mit Ctrl oder Shift ein anderes.\nJ: die Mengen am Markt auf 0. M: Minikarte. ~: Lebensbalken. F2: durchsichtige Gebäude.\nDie Buchstaben des Bedienfelds drücken seine Knöpfe (Shift: wie ein Shift-Klick). Delete: die erste Einheit der Auswahl.\nPause: Pause. Numpad + und -: Spieltempo x1, x2, x4. F1: das Missionsfenster.\nEsc: Bauen abbrechen, sonst das Spielmenü. Pfeiltasten, der Fensterrand oder Ziehen mit der mittleren Taste: scrollen.
+#@ en=f9db5e src=ai
+network.not_available = Netzwerkspiel ist in dieser Version nicht verfügbar.
+#@ en=345efe src=ai
+net.connection = TCP/IP (LAN oder Internet)
+#@ en=26c5e8 src=ai
+net.type_name = Bitte Namen eingeben.
+# unsure: the glossary offers "Port = Hafen" (the building); here it is the network port, so I used "Port"
+#@ en=c4a46a src=ai
+net.port_range = Der Port ist eine Zahl von 1 bis 65535.
+#@ en=d96216 src=ai
+net.typed = {address} (eingegeben)
+#@ en=816ae9 src=ai
+net.row_locked = {row}  (Passwort)
+#@ en=e82a12 src=ai
+net.none_found = Noch kein Spiel in diesem Netzwerk gefunden.\nGeben Sie auf der ersten Seite die Adresse des Gastgebers ein\noder klicken Sie auf Erstellen, um selbst ein Spiel zu eröffnen.
+#@ en=8fab33 src=ai
+net.saved_game = Gespeichertes Spiel auf {map}, {when}
+#@ en=ad2c7a src=ai
+net.players = Spieler: {players}
+#@ en=56abf3 src=ai
+net.saved_rejoin = Beitreten eröffnet es erneut auf diesem PC; die anderen\ntreten bei und kehren auf ihre Plätze zurück.
+#@ en=0bc18d src=ai
+net.address = Adresse: {address}
+#@ en=54cf69 src=ai
+net.details_on_join = Die Details des Spiels folgen beim Beitritt.
+#@ en=053c35 src=ai
+net.map = Karte: {map}
+#@ en=77ad3e src=ai
+net.rules = Regeln: {rules}
+#@ en=7a9548 src=ai
+net.players_of = Spieler: {n} von {max}
+#@ en=5ff112 src=ai
+net.password_needed = Ein Passwort ist nötig.
+#@ en=8be3c9 src=ai
+net.password = Passwort
+#@ en=c646e5 src=ai
+net.choose_game = Wählen Sie ein Spiel in der Liste oder geben Sie auf der ersten Seite die Adresse des Gastgebers ein.
+#@ en=c49894 src=ai
+net.saved_row = Gespeichert: {map} {when}
+#@ en=e7a83a src=ai
+net.back_to = Zurück zu {address}
+#@ en=cad715 src=ai
+net.game_title = Spiel von {name}
+#@ en=cf9b77 src=ai
+net.slot_open = Offen
+#@ en=f7e9ba src=ai
+net.slot_open_for = Offen ({name})
+#@ en=2f5612 src=ai
+net.slot_easy = Computer: Leicht
+#@ en=3a374a src=ai
+net.slot_medium = Computer: Mittel
+#@ en=3b4ed5 src=ai
+net.slot_difficult = Computer: Schwer
+#@ en=1e89ea src=ai
+net.slot_easy.short = KI: Leicht
+#@ en=827d16 src=ai
+net.slot_medium.short = KI: Mittel
+#@ en=650ad3 src=ai
+net.slot_difficult.short = KI: Schwer
+#@ en=b740d6 src=ai
+net.slot_computer_seat = Computer (Platz von {name})
+#@ en=c5e42a src=ai
+net.waiting.one = Warte auf {n} weiteren Spieler.
+#@ en=e03a77 src=ai
+net.waiting.other = Warte auf {n} weitere Spieler.
+#@ en=f4dee8 src=ai
+net.all_in_host = Alle sind da. Klicken Sie auf Start.
+#@ en=ccb466 src=ai
+net.all_in = Alle sind da. Der Gastgeber startet das Spiel.
+#@ en=e9e731 src=ai
+net.seat_help = Offenen Platz anklicken: Der Computer spielt ihn. Einen Spieler anklicken, um ihn zu versetzen.
+#@ en=86c0a9 src=ai
+net.seat_move = Offenen Platz anklicken, um {name} dorthin zu setzen.
+# unsure: the glossary offers "Port = Hafen" (the building); here it is the network port, so I used "Port"
+#@ en=bf0619 src=ai
+net.join_at = Andere treten unter {address}, Port {port} bei.
+#@ en=329abf src=ai
+net.this_pc = die Adresse dieses PCs
+#@ en=bbfeb6 src=ai
+net.has_password = Das Spiel hat ein Passwort.
+#@ en=4b8738 src=ai
+net.host_failed = Das Spiel konnte nicht eröffnet werden: {reason}
+#@ en=ccb88d src=ai
+net.join_failed = Beitritt zum Spiel fehlgeschlagen: {reason}
+#@ en=64c32c src=ai
+net.joining = Verbinde mit {address} ...
+#@ en=2593a2 src=ai
+net.ended = Das Netzwerkspiel wurde beendet: {reason}
+#@ en=595c28 src=ai
+net.no_answer = Unter {address} hat kein Spiel geantwortet. Prüfen Sie, ob der Gastgeber das Spiel geöffnet hat und ob die Windows-Firewall Entente Engine zulässt.
+#@ en=dd0f10 src=ai
+update.newest = Sie haben die neueste Version, Entente Engine {version}.
+#@ en=56e2f5 src=ai
+update.later = Später
+#@ en=3347a1 src=ai
+update.on_releases = Entente Engine {version} ist erschienen (Sie haben {current}).\n\nSie können es von der Seite des Projekts auf GitHub herunterladen. Diese Seite jetzt öffnen?
+#@ en=308f8e src=ai
+update.open_page = Seite öffnen
+#@ en=c6a994 src=ai
+update.on_releases_failed = GitHub konnte nicht nach der neuesten Version gefragt werden. Bitte versuchen Sie es später noch einmal.
+#@ en=74118b src=ai
+folder.intro = Entente Engine braucht die Dateien von The Entente Gold und konnte sie auf diesem PC nicht selbst finden.\n\nBitte wählen Sie den Ordner, in dem The Entente Gold installiert ist (den Ordner mit Antanta.exe und dem Ordner Data darin).
+#@ en=e6e46b src=ai
+folder.wrong = Dieser Ordner enthält nicht The Entente Gold:\n{folder}\n\nDie Datei {file} fehlt darin.\n\nBitte wählen Sie den Ordner, in dem The Entente Gold installiert ist (den Ordner mit Antanta.exe und dem Ordner Data darin).
+#@ en=e31d80 src=ai
+folder.choose = Ordner wählen
+#@ en=af3575 src=ai
+folder.choose_another = Anderen Ordner wählen
+#@ en=1a2285 src=ai
+box.quit = Beenden
+#@ en=997e3a src=ai
+crash.box = Entente Engine ist abgestürzt. Das tut uns leid!\n\nEin kurzer Bericht wurde gespeichert unter\n{path}\n\nBitte schicken Sie diese Datei an die Person, von der Sie das Spiel haben.
+#@ en=883b15 src=ai
+start.failed = Entente Engine konnte nicht starten.\n\nDer Grund steht in der neuesten Datei im Ordner %APPDATA%\\EntenteEngine\\logs (fügen Sie das in die Adressleiste eines Explorer-Fensters ein). Bitte schicken Sie diese Datei an die Person, von der Sie das Spiel haben.
+#@ en=9627c2 src=ai
+reason.net_protocol = Protokollversion {theirs}, der Server hat {ours}
+#@ en=332495 src=ai
+reason.net_build = Build {theirs}, der Server hat {ours}
+#@ en=a29205 src=ai
+reason.net_in_game = bereits in einem Spiel
+#@ en=0ebd3d src=ai
+reason.net_server_full = der Server nimmt keine Spiele mehr an
+#@ en=116ebe src=ai
+reason.net_no_position = ein Spielerplatz ohne Startposition auf der Karte
+#@ en=1a0552 src=ai
+reason.net_too_many = mehr menschliche Spieler, als der Server erlaubt
+#@ en=940ec6 src=ai
+reason.net_not_net_save = kein Spielstand eines Netzwerkspiels
+#@ en=d9e32a src=ai
+reason.net_not_net_save_why = kein Spielstand eines Netzwerkspiels: {reason}
+#@ en=6e5527 src=ai
+reason.net_seats_differ = die Plätze im Spielstand sind anders
+#@ en=780cd3 src=ai
+reason.net_host_slot = der Platz des Gastgebers ist kein Spielerplatz
+#@ en=42d461 src=ai
+reason.net_no_game = kein solches offenes Spiel
+#@ en=4a8559 src=ai
+reason.net_files_differ = Ihre Spieldateien weichen von denen des Gastgebers ab
+#@ en=d8c64f src=ai
+reason.net_wrong_password = falsches Passwort
+#@ en=9e99ff src=ai
+reason.net_no_free_slot = kein freier Spielerplatz
+#@ en=0f0849 src=ai
+reason.net_no_seat = kein solcher Platz zum Zurückkehren
+#@ en=10a394 src=ai
+reason.net_seat_given = der Platz ging für den Rest des Spiels an den Computer
+#@ en=abb576 src=ai
+reason.net_nobody_left = niemand mehr im Spiel, an den es gehen könnte
+#@ en=3aafae src=ai
+reason.net_host_starts = nur der Gastgeber startet, nur einmal
+#@ en=5178c1 src=ai
+reason.net_not_all_taken = nicht jeder Spielerplatz ist besetzt
+#@ en=56ad35 src=ai
+reason.net_host_left = der Gastgeber ging
+#@ en=e9d5b9 src=ai
+reason.net_no_connection = keine Verbindung
+#@ en=2d3ae0 src=ai
+reason.net_closed = Verbindung geschlossen
+#@ en=ad3f9a src=ai
+reason.net_dropped = getrennt
+#@ en=241e1c src=ai
+reason.net_all_computer = jeder Platz dieses Spiels ging an den Computer
+#@ en=9be46e src=ai
+reason.net_save_not_net = {path} ist kein Spielstand eines Netzwerkspiels
+#@ en=0d97c0 src=ai
+reason.save_no_game = es gibt kein Spiel zum Speichern
+#@ en=6949a0 src=ai
+reason.save_no_folder = es gibt keinen Ordner für die Spielstände
+#@ en=c32cba src=ai
+reason.save_not_packed = das Spiel konnte nicht gepackt werden
+#@ en=14c0c2 src=ai
+reason.restart_no_skirmish = kein Gefecht zum Neustarten
+#@ en=5faa1b src=ai
+reason.map_size = {path} hat nicht die Größe der Karte dieses Spielstands
+#@ en=18e935 src=ai
+lua.nivel_units.one = Wir haben : {n}  Einheit.
+#@ en=18e935 src=ai
+lua.nivel_units.other = Wir haben : {n}  Einheiten.
+#@ en=accdd5 src=ai
+pic.single_player = Einzelspieler
+#@ en=21bd03 src=ai
+pic.multiplayer = Mehrspieler
+#@ en=802aa6 src=ai
+pic.load_game = Spiel laden
+#@ en=6bf5da src=ai
+pic.options = Optionen
+#@ en=69d9f3 src=ai
+pic.museum = Museum
+#@ en=dd3db9 src=ai
+pic.quit_game = Spiel beenden
+#@ en=01a23a src=ai
+pic.campaigns = Kampagnen
+#@ en=323ea3 src=ai
+pic.missions = Missionen
+#@ en=7e2eac src=ai
+pic.random_maps = Zufallskarten
+#@ en=b52b36 src=ai
+pic.back = Zurück
+#@ en=ddcb77 src=ai
+pic.load = Laden
+#@ en=efc007 src=ai
+pic.save = Speichern
+#@ en=7a85f4 src=ai
+pic.plate_ok = ok
+#@ en=61cc55 src=ai
+pic.add = Hinzufügen
+#@ en=f6fdbe src=ai
+pic.delete = Löschen
+#@ en=2e0262 src=ai
+pic.continue = Weiter
+#@ en=bc9819 src=ai
+pic.next = Weiter
+#@ en=e96fea src=ai
+pic.prev = Zurück
+#@ en=952f37 src=ai
+pic.start = Starten
+#@ en=6e157c src=ai
+pic.create = Erstellen
+#@ en=e0d731 src=ai
+pic.join = Beitreten
+#@ en=5397e0 src=ai
+pic.yes = Ja
+#@ en=816c52 src=ai
+pic.no = Nein
+#@ en=b0a982 src=ai
+pic.ok = Ok
+#@ en=77dfd2 src=ai
+pic.cancel = Abbrechen
+#@ en=bbfa77 src=ai
+pic.close = Schließen
+#@ en=7ce298 src=ai
+pic.game_options = Spieloptionen
+#@ en=804967 src=ai
+pic.back_to_game = Zurück zum Spiel
+#@ en=f0e83f src=ai
+pic.restart_mission = Mission neu starten
+#@ en=52bcd0 src=ai
+pic.return_to_menu = Zurück zum Menü
+#@ en=f760e3 src=ai
+pic.save_game = Spiel speichern
+#@ en=c7f73b src=ai
+pic.settings = Einstellungen
+#@ en=dbc874 src=ai
+pic.close_caps = SCHLIESSEN
+#@ en=1992d5 src=ai
+pic.next_caps = WEITER
+#@ en=b231db src=ai
+pic.prev_caps = ZURÜCK
+#@ en=af52ad src=ai
+pic.game_speed = Spiel-\ntempo
+#@ en=99f86f src=ai
+pic.music_volume = Musik-\nlautstärke
+#@ en=31a2d5 src=ai
+pic.sfx_volume = Effekt-\nlautstärke
+#@ en=22e11c src=ai
+pic.screen_resolution = Bildschirm-\nauflösung
+#@ en=e42124 src=ai
+pic.select_campaign = Kampagne wählen
+#@ en=5722b3 src=ai
+pic.load_mission = Mission laden
+#@ en=99d29b src=ai
+pic.diplomacy = Diplomatie
+#@ en=939150 src=ai
+pic.game_menu = Spielmenü

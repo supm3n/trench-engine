@@ -1,0 +1,4 @@
+# The language's own name, its plural rule (english, french, slavic or none) and later an optional font
+# (docs/languages.md 5.1).
+name = Русский
+plural = slavic

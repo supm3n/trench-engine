@@ -1,0 +1,9 @@
+# Checked by check.cmd (clang-format --dry-run --Werror). Run clang-format -i after editing.
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 120
+AccessModifierOffset: -2
+AllowShortCaseLabelsOnASingleLine: true
+DerivePointerAlignment: false
+PointerAlignment: Left
+IncludeBlocks: Preserve

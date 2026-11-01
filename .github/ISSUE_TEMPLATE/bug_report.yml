@@ -1,0 +1,70 @@
+name: Bug report
+description: Something crashes, looks wrong or plays differently from the original game.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug. Please check first whether it is already on the Issues page.
+        Your files are in `%APPDATA%\EntenteEngine` (paste that into the address bar of a File Explorer window).
+        Please do not post personal data you do not want to share publicly.
+  - type: input
+    id: version
+    attributes:
+      label: Entente Engine version
+      description: In the bottom right corner of the main menu, for example 2026.1.
+      placeholder: "2026.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: windows
+    attributes:
+      label: Windows version
+      options:
+        - Windows 11
+        - Windows 10
+        - Other (please say in the description)
+    validations:
+      required: true
+  - type: dropdown
+    id: rules
+    attributes:
+      label: Rules
+      description: Which rule set or mode were you playing?
+      options:
+        - Entente Engine (standard rules)
+        - Entente Engine Plus
+        - A mission or campaign
+        - A network game
+        - Not in a game (menus, start)
+    validations:
+      required: false
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What were you doing, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to see it again
+      description: The steps, if you know them. A save from just before the problem helps a lot (attach the file from `%APPDATA%\EntenteEngine`).
+    validations:
+      required: false
+  - type: textarea
+    id: crash
+    attributes:
+      label: Crash report
+      description: After a crash, attach the file `crash_<date>_<time>.txt` from `%APPDATA%\EntenteEngine` (drag it into this box).
+    validations:
+      required: false
+  - type: textarea
+    id: log
+    attributes:
+      label: Newest log
+      description: Attach the newest file from `%APPDATA%\EntenteEngine\logs` (drag it into this box).
+    validations:
+      required: false

@@ -1,0 +1,34 @@
+// The release exe's resources (docs/release.md): the icon (antanta.ico, our own, made by tools/make_icon.py), the
+// Windows version information and the manifest. CMakeLists.txt fills in the @ fields (ANTANTA_RELEASE builds only).
+#include <winver.h>
+
+1 ICON "@ANTANTA_RES_DIR@/antanta.ico"
+1 24 "@ANTANTA_RES_DIR@/antanta.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION @ANTANTA_VERSION_MAJOR@,@ANTANTA_VERSION_MINOR@,@ANTANTA_VERSION_PATCH@,0
+PRODUCTVERSION @ANTANTA_VERSION_MAJOR@,@ANTANTA_VERSION_MINOR@,@ANTANTA_VERSION_PATCH@,0
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+FILEFLAGS 0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904b0"
+    BEGIN
+      VALUE "FileDescription", "Entente Engine for The Entente Gold"
+      VALUE "FileVersion", "@ANTANTA_VERSION@"
+      VALUE "InternalName", "EntenteEngine"
+      VALUE "OriginalFilename", "@ANTANTA_RELEASE_NAME@.exe"
+      VALUE "ProductName", "Entente Engine"
+      VALUE "ProductVersion", "@ANTANTA_VERSION@"
+      VALUE "Comments", "Needs your own copy of The Entente Gold. An unofficial, independent engine: not made, approved or endorsed by the original game's makers or publishers."
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END

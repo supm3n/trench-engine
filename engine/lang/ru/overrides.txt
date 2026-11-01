@@ -1,0 +1,6 @@
+# lang/ru/overrides.txt, written by tools/lang.py (docs/languages.md 6.1).
+# '#@ en=<hash of the English> src=<where it came from> review=<why to look again>'; the engine skips these lines.
+
+# review pass: names of buttons and messages in texts match the interface text
+#@ en=0e5b3c src=fix
+game.build_more_houses = Постройте больше домов.

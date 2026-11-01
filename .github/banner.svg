@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="200" viewBox="0 0 960 200" role="img" aria-labelledby="t d">
+  <title id="t">Entente Engine</title>
+  <desc id="d">Entente Engine: an unofficial engine for The Entente Gold on Windows 10 and 11</desc>
+  <!-- Own background so the banner looks the same in GitHub's light and dark themes. Text and simple shapes only. -->
+  <rect width="960" height="200" rx="14" fill="#3b4128"/>
+  <rect x="8" y="8" width="944" height="184" rx="9" fill="none" stroke="#c9a94a" stroke-width="2"/>
+  <!-- A trench line along the bottom -->
+  <polyline points="40,160 120,160 140,172 220,172 240,160 330,160 350,172 430,172 450,160 540,160 560,172 640,172 660,160 750,160 770,172 850,172 870,160 920,160"
+            fill="none" stroke="#7d8455" stroke-width="4" stroke-linejoin="round"/>
+  <!-- The emblem: a gold E on an olive square, as the exe's own icon -->
+  <rect x="48" y="44" width="92" height="92" rx="8" fill="#55603a" stroke="#c9a94a" stroke-width="3"/>
+  <text x="94" y="115" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="74" font-weight="700" fill="#e2c35e">E</text>
+  <text x="170" y="96" font-family="Georgia, 'Times New Roman', serif" font-size="54" font-weight="700" fill="#f1ead2" letter-spacing="1">Entente Engine</text>
+  <text x="172" y="132" font-family="'Segoe UI', Arial, Helvetica, sans-serif" font-size="21" fill="#d8cfae">An unofficial engine for The Entente Gold, for Windows 10 and 11</text>
+</svg>

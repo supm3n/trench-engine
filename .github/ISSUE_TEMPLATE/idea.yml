@@ -1,0 +1,29 @@
+name: Idea
+description: Something you would like to see in Entente Engine.
+title: "[Idea] "
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for your idea. The standard rules stay as close to the original game as the bug fixes allow,
+        so balance changes go into the optional Entente Engine Plus rule set.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it belong?
+      options:
+        - Interface and comfort
+        - Entente Engine Plus (balance, new features)
+        - Network games
+        - Languages and texts
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What would you like, and what would it make better in your games?
+    validations:
+      required: true

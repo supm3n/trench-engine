@@ -1,0 +1,301 @@
+# Our own texts in English, the source of every translation (docs/languages.md 5.1 and 5.2). "key = value", "\n" a
+# line break, quotes keep spaces at the edges, {name} a placeholder, key.one / key.other the plural forms. Every text
+# the player sees that is ours (not from the game's .st, .tt or .grf) is here (slice L2); not here on purpose: the
+# language names (each in its own words, language.txt), names and other data (players, profiles, saves, maps,
+# addresses), the developer screens, logs and command line help (English, decisions.md 1) and test-script data.
+
+# The version texts: the original's corner text, ours in the main menu's corner
+version.game = Entente v 2.0
+menu.build_label = Entente Engine {version}
+menu.build_label_developer = Entente Engine {version} (developer build)
+menu.check_updates = Check for updates
+
+# Options: the browser has no screen resolution to choose
+options.fits_window = Fits the window
+
+# Game options, our rows (docs/frontend.md 4.4)
+options.interface_scale = Interface scale
+options.interface_pictures = Interface pictures
+options.world_zoom = World zoom
+options.auto = Auto
+options.scale = {n}x
+options.pictures_between = In between
+options.pictures_crisp = Crisp
+options.pictures_smooth = Smooth
+options.network_heading = NETWORK GAMES (when you host)
+options.autosave_every = Autosave every
+options.seat_kept = Seat kept after a drop
+options.computer_takes_over = Computer takes over
+options.minutes.one = {n} minute
+options.minutes.other = {n} minutes
+options.whole_game = Whole game
+options.nobody = Nobody
+options.check_updates = Check for updates
+options.on = On
+options.off = Off
+options.simulation_thread = Simulation thread
+options.language = Language
+
+# The museum
+museum.pictures_failed = The museum pictures could not be loaded. Please try again in a moment.
+museum.files_failed = The museum files could not be read.
+
+# Single player: the skirmish setup (the host's has the speed and a human seat)
+skirmish.speed = Speed
+skirmish.speed_normal = Normal
+skirmish.speed_slower = Slower
+skirmish.speed_slow = Slow
+skirmish.speed_very_slow = Very slow
+skirmish.human = Human
+skirmish.rules = Rules
+skirmish.rules_classic = Entente Engine
+skirmish.rules_plus = Entente Engine Plus
+skirmish.rules_plus_tip = Entente Engine Plus: reworked rules for skirmishes (research that does what its text says, fairer costs and more). Missions and campaigns always use Entente Engine.
+
+# Entente Engine Plus: the tooltips of the Military Academy's research whose effect there is not the game's text (the
+# number is the research id, ui/house_panel.hpp kPlusResearchTexts; docs/plus-balance.md F1)
+research.plus_war7 = Explosive bullets (+15% rifle attack of the infantry)
+research.plus_war18 = Unitary charge (+20% rate of fire of the howitzer and the stationary howitzer)
+research.plus_war20 = New optical sights (+30% accuracy and +15% range of the cannon and the howitzer)
+research.plus_war23 = Better pay for tank designers (-30% tank build time)
+research.plus_war26 = Welding (-30% ship build time)
+
+# Entente Engine Plus: the items it merges or adds (docs/plus-balance.md 5; house_panel.hpp kPlusNewResearchTexts
+# and, for the Academy of Sciences by row, kPlusScienceTexts), the upkeep and slow reload of a unit that pays iron,
+# gold or oil (unit and house panels, E1) and the market's price index on a sell button (E2)
+research.plus_war1 = Marksmanship (+25% infantry accuracy and +10% infantry range)
+research.plus_war4 = Officer school (+30% officer accuracy and +20% officers' rate of fire)
+research.plus_war10 = Gas masks (+80% gas protection, in buildings and in the open)
+research.plus_war16 = Remounts (+35% cavalry health and +10% cavalry speed)
+research.plus_war27 = Steel helmets (the infantry suffers less from shelling)
+research.plus_war28 = Deep drilling (+35% oil)
+research.plus_sci3 = New bricks (+25% building durability against shells)
+research.plus_sci4 = Cement additives (+25% building durability against shells)
+research.plus_sci5 = Layered brickwork (+25% building durability against shells)
+research.plus_sci10 = Durability-improving pick-ax additives (+35% gold and iron)
+research.plus_sci11 = Invent new ore-smelting additives (+35% gold and iron)
+research.plus_sci19 = Steam sawmills (+35% wood)
+research.plus_war2 = Light machine gun (machine gunners reload and train 30% faster and move 15% faster)
+research.plus_war9 = Conscription (soldiers and officers train 25% faster)
+research.plus_war12 = Cavalry shock tactics (the cavalry suffers less from shelling)
+research.plus_sci13 = Gas shells (ten more special shells)
+research.plus_sci17 = Delousing (treats all units; each use doubles the price of the next)
+research.plus_build0 = pillboxes and watch towers hold twice as many men
+research.plus_build1 = your buildings take half the damage from shells
+research.plus_build2 = +50% health of your buildings
+research.plus_saw0 = Sharper saws (+30% wood)
+research.plus_saw1 = More saw benches (+60% wood)
+research.plus_oil0 = Raise salary (+30% oil)
+research.plus_oil1 = Deeper wells (+60% oil)
+research.plus_mine0 = Better picks (+30% ore)
+research.plus_mine1 = Explore new mines (+60% ore)
+research.plus_level_more = Expansion (+50% of the starting output)
+plus.mint = Start minting coins (gold increase +50%)
+plus.mint_after = Coin minting under way (gold increase +50%)
+plus.upkeep = Upkeep a minute
+plus.reload_slow = Reloading slowly
+plus.reload_slow_why = no iron, gold or oil
+plus.market_price = Price now: {percent}% of normal (it recovers over time)
+plus.advisor_payback = Researching: {item}. Pays back in {n} min
+plus.advisor_units = Researching: {item}, for {n} of your units
+plus.advisor_counter = Researching: {item}, against what the enemy has
+plus.advisor_upgrade = Upgrading: {item}. Pays back in {n} min
+plus.advisor_academy = Building an academy for the next research
+plus.advisor_power = More power: researching {item}
+plus.advisor_power_station = More power: a new or upgraded power station
+plus.advisor_room = More room for units: a new dwelling or a dwelling upgrade
+plus.advisor_tower = Strengthening a tower or pillbox under threat
+research.plus_war17 = Fire direction staff (artillery barrages, gas attacks, bombing runs and recon flights called in from the town centre)
+strike.barrage = Artillery barrage
+strike.barrage_tip = 40 heavy shells land at random within a circle around the point you pick, over about 10 seconds. They hit everyone there, your own men too
+strike.creeping = Creeping barrage
+strike.creeping_tip = 60 shells walk along a line from the first point you pick to the second, over about 18 seconds. They hit everyone there, your own men too
+strike.gas = Gas attack
+strike.gas_tip = 4 gas shells land within a circle around the point you pick
+strike.bombing = Bombing run
+strike.bombing_tip = Heavy bombers drop 24 bombs along a line from the first point you pick to the second
+strike.recon = Recon flight
+strike.recon_tip = A scout plane lifts the fog over a wide circle around the point you pick for about a minute, for you only
+strike.wait = ready again in {n} s
+strike.short = not enough resources
+strike.need_gas = needs the gas research of the Academy of Sciences
+
+# Single player: the campaigns and missions
+campaign.not_available = The Entente and Triple Alliance missions are not available yet.
+missions.list_failed = The mission list could not be opened: {reason}
+campaigns.failed = The campaigns could not be opened: {reason}
+campaign.missions_failed = The campaign's missions could not be opened: {reason}
+mission.start_failed = The mission could not be started: {reason}
+
+# Starting, restarting, saving and loading a game
+game.start_failed = The game could not be started: {reason}
+game.restart_failed = The game could not be started again: {reason}
+game_menu.restart_unavailable = Restart works for a mission, a game started from the skirmish setup, or one loaded from a save of such a game made by Entente Engine. The original's save files do not keep the setup.
+save.default_name = No_name
+save.failed = The game could not be saved: {reason}
+load.failed = The game could not be loaded.
+load.failed_reason = The game could not be loaded: {reason}
+load.not_in_network = Loading a game is not possible in a network game.
+load.original = {name} (original)
+load.original_info = a save of the original game
+load.unreadable = This file cannot be read.
+load.time_played = Time played {time}
+
+# In a game: the interface, the build menu, the hints window's last page (our keys)
+game.build_more_houses = Build more houses.
+build.pontoon_gap = Pontoon bridge not laid: it would have a gap where ships sail or a building stands too close.
+build.pontoon_wood = Pontoon bridge not laid: it needs {wood} wood.
+hints.keys = Keys of the new engine (the original's, F12 for the developer view):\nClick: select (Shift adds). Double click: all of that type on screen.\nA: all your units on screen, Ctrl+A on the map. Shift+A: your workers on screen. Ctrl+F: idle workers.\nZ: the selected types on screen (Shift adds), Ctrl+Z on the map.\nCtrl+1..9: make a group. 1..9, 0: select it (Shift adds, press again: look at it).\nTab: next selected unit (or the next house of the type, Ctrl back). Space: look at the selection.\nNothing selected: E Q R T U W Y pick a house, with Ctrl or Shift another one.\nJ: the market's amounts to 0. M: minimap. ~: health bars. F2: see-through houses.\nThe panel's letters press its buttons (Shift: as a Shift click). Delete: the head of the selection.\nPause: pause. Numpad + and -: game speed x1, x2, x4. F1: the mission window.\nEsc: cancel building, else the game menu. Arrows, the window edge or a middle drag: scroll.
+
+# Network pages (docs/multiplayer.md): the player page, the list of games, the lobby
+network.not_available = Network play is not available in this version.
+net.connection = TCP/IP (LAN or Internet)
+net.type_name = Please type your name.
+net.port_range = The port is a number from 1 to 65535.
+net.typed = {address} (typed)
+net.row_locked = {row}  (password)
+# The help box wraps each paragraph ("\n" starts one) into its rows (docs/languages.md 2.5, net.help); the English
+# breaks where its rows broke before, a translation may break anywhere or run on.
+net.none_found = No game found on this network yet.\nType the host's address on the first page,\nor press Create to host a game.
+net.saved_game = A saved game on {map}, {when}
+net.players = Players: {players}
+net.saved_rejoin = Join hosts it again on this PC; the others\njoin you and come back to their seats.
+net.address = Address: {address}
+net.details_on_join = The game's details come when you join.
+net.map = Map: {map}
+net.rules = Rules: {rules}
+net.players_of = Players: {n} of {max}
+net.password_needed = A password is needed.
+net.password = Password
+net.choose_game = Choose a game in the list, or type the host's address on the first page.
+net.saved_row = Saved: {map} {when}
+net.back_to = Back to {address}
+net.game_title = {name}'s game
+net.slot_open = Open
+net.slot_open_for = Open ({name})
+net.slot_easy = Computer: Easy
+net.slot_medium = Computer: Medium
+net.slot_difficult = Computer: Difficult
+# The short forms of the lobby's player column (156 px; docs/languages.md 2.4 rule 2), used only where the full text
+# does not fit even at the smallest size (English always fits).
+net.slot_easy.short = AI: Easy
+net.slot_medium.short = AI: Medium
+net.slot_difficult.short = AI: Difficult
+net.slot_computer_seat = Computer ({name}'s seat)
+net.waiting.one = Waiting for {n} more player.
+net.waiting.other = Waiting for {n} more players.
+net.all_in_host = Everyone is in. Press Start.
+net.all_in = Everyone is in. The host starts the game.
+net.seat_help = Click an open seat: the computer plays it. Click a player to move him.
+net.seat_move = Click an open seat to move {name} there.
+net.join_at = Others join at {address}, port {port}.
+net.this_pc = this PC's address
+net.has_password = The game has a password.
+net.host_failed = The game could not be hosted: {reason}
+net.join_failed = The game could not be joined: {reason}
+net.joining = Joining {address} ...
+net.ended = The network game ended: {reason}
+net.no_answer = No game answered at {address}. Check that the host has the game open and that Windows Firewall allows Entente Engine.
+
+# The update check (the menu's "Check for updates") and the box that tells of a newer version: the updater
+# (docs/download.md "The updater") and the public build's Releases notice (platform/release_check.hpp)
+update.newest = You have the newest version, Entente Engine {version}.
+update.later = Later
+update.on_releases = Entente Engine {version} is out (you have {current}).\n\nYou can download it from the project's page on GitHub. Open that page now?
+update.open_page = Open the page
+update.on_releases_failed = Could not ask GitHub for the newest version. Please try again later.
+
+# The game folder (docs/release.md): asked before the game's files are there
+folder.intro = Entente Engine needs the files of The Entente Gold, and could not find them on this PC by itself.\n\nPlease choose the folder where The Entente Gold is installed (the folder with Antanta.exe and the Data folder in it).
+folder.wrong = This folder does not hold The Entente Gold:\n{folder}\n\nThe file {file} is missing in it.\n\nPlease choose the folder where The Entente Gold is installed (the folder with Antanta.exe and the Data folder in it).
+folder.choose = Choose the folder
+folder.choose_another = Choose another folder
+box.quit = Quit
+crash.box = Entente Engine crashed. Sorry!\n\nA short report was saved as\n{path}\n\nPlease send that file to whoever gave you the game.
+start.failed = Entente Engine could not start.\n\nThe reason is written in the newest file of the folder %APPDATA%\EntenteEngine\logs (paste that into the address bar of a File Explorer window). Please send that file to whoever gave you the game.
+
+# Reasons: sentences that the parts without a language (the updater, the network server and client, the game's
+# loading) give as English text; the display maps them back to these keys (ui/lang.hpp lang_reverse). A reason that is
+# not here (a technical detail: a file's damage, an error number) stays English, as the logs do.
+reason.net_protocol = protocol version {theirs}, the server has {ours}
+reason.net_build = build {theirs}, the server has {ours}
+reason.net_in_game = already in a game
+reason.net_server_full = the server holds no more games
+reason.net_no_position = a human slot the map has no position for
+reason.net_too_many = more human players than the server allows
+reason.net_not_net_save = not a network game's save
+reason.net_not_net_save_why = not a network game's save: {reason}
+reason.net_seats_differ = the save's seats differ
+reason.net_host_slot = the host's slot is not a human slot
+reason.net_no_game = no such open game
+reason.net_files_differ = your game files differ from the host's
+reason.net_wrong_password = wrong password
+reason.net_no_free_slot = no free player slot
+reason.net_no_seat = no such seat to come back to
+reason.net_seat_given = the seat was given to the computer for the rest of the game
+reason.net_nobody_left = nobody left in the game to send it
+reason.net_host_starts = only the host starts a game, once
+reason.net_not_all_taken = not every player slot is taken
+reason.net_host_left = the host left
+reason.net_no_connection = no connection
+reason.net_closed = the connection closed
+reason.net_dropped = dropped
+reason.net_all_computer = every seat of this game was given to the computer
+reason.net_save_not_net = {path} is not the save of a network game
+reason.save_no_game = there is no game to save
+reason.save_no_folder = there is no folder for the saves
+reason.save_not_packed = the game could not be packed
+reason.restart_no_skirmish = no skirmish to restart
+reason.map_size = {path} does not have the size of this save's map
+
+# The Lua scripts' screen lines (AddMessage): a script's literal texts, mapped back by the same rule (lua.); the one
+# there is, nivel.lua's count of your units, shows only under the original's rules (B239 removes it otherwise)
+lua.nivel_units.one = We have : {n}  units.
+lua.nivel_units.other = We have : {n}  units.
+
+# The painted words of the original's pictures (docs/languages.md 3, slices L4 and L4b): buttons, plaques and headings
+# whose English is part of the picture; a translation is drawn over the picture's blank in its place. The English stays
+# the original picture.
+pic.single_player = Single Player
+pic.multiplayer = Multiplayer
+pic.load_game = Load Game
+pic.options = Options
+pic.museum = Museum
+pic.quit_game = Quit Game
+pic.campaigns = Campaigns
+pic.missions = Missions
+pic.random_maps = Random Maps
+pic.back = Back
+pic.load = Load
+pic.save = Save
+pic.plate_ok = ok
+pic.add = Add
+pic.delete = Delete
+pic.continue = Continue
+pic.next = Next
+pic.prev = Prev
+pic.start = Start
+pic.create = Create
+pic.join = Join
+pic.yes = Yes
+pic.no = No
+pic.ok = Ok
+pic.cancel = Cancel
+pic.close = Close
+pic.game_options = Game Options
+pic.back_to_game = Back to Game
+pic.restart_mission = Restart Mission
+pic.return_to_menu = Return to Menu
+pic.save_game = Save Game
+pic.settings = Settings
+pic.close_caps = CLOSE
+pic.next_caps = NEXT
+pic.prev_caps = PREV
+pic.game_speed = Game\nSpeed
+pic.music_volume = Music\nVolume
+pic.sfx_volume = SFX\nVolume
+pic.screen_resolution = Screen\nResolution
+pic.select_campaign = Select Campaign
+pic.load_mission = Load Mission
+pic.diplomacy = Diplomacy
+pic.game_menu = Game Menu

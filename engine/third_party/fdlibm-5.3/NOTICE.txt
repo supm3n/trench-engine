@@ -1,0 +1,20 @@
+FDLIBM 5.3, https://www.netlib.org/fdlibm/
+The notice below is copied unchanged from the source files (fdlibm.h and k_tan.c carry the 2004 one, the other
+files the 1993 one). This NOTICE.txt is the only file in this folder that is not from netlib.
+
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunSoft, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+
+ * ====================================================
+ * Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================

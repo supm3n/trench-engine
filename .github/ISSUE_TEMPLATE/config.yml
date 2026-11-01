@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Installation guide and troubleshooting
+    url: https://github.com/supm3n/trench-engine/blob/main/docs/INSTALL.md#troubleshooting
+    about: Answers to common problems (game not found, fonts, the Windows warning, network games).
+  - name: Report a security problem
+    url: https://github.com/supm3n/trench-engine/security/advisories/new
+    about: Please report security problems privately, not as a public issue.

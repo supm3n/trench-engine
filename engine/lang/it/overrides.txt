@@ -1,0 +1,24 @@
+# lang/it/overrides.txt, written by tools/lang.py (docs/languages.md 6.1).
+# '#@ en=<hash of the English> src=<where it came from> review=<why to look again>'; the engine skips these lines.
+
+# review pass: formal Lei forms in lowercase inside a sentence
+#@ en=96d10b src=fix
+options.network_heading = PARTITE IN RETE (se ospita lei)
+# review pass: formal Lei forms in lowercase inside a sentence
+#@ en=0e9eb3 src=fix
+hints.keys = Tasti del nuovo motore (oltre a quelli dell'originale; F12: vista sviluppatore):\nClic: selezionare (Maiusc aggiunge). Doppio clic: tutti quelli dello stesso tipo sullo schermo.\nA: tutte le sue unità sullo schermo, Ctrl+A sulla mappa. Maiusc+A: i suoi operai sullo schermo. Ctrl+F: operai inattivi.\nZ: i tipi selezionati sullo schermo (Maiusc aggiunge), Ctrl+Z sulla mappa.\nCtrl+1..9: creare un gruppo. 1..9, 0: selezionarlo (Maiusc aggiunge; premere di nuovo: centrare la vista).\nTab: unità selezionata successiva (o l'edificio successivo dello stesso tipo, Ctrl all'indietro). Spazio: centrare la vista sulla selezione.\nNessuna selezione: E Q R T U W Y scelgono un edificio, con Ctrl o Maiusc un altro.\nJ: quantità del mercato a 0. M: minimappa. ~: barre della salute. F2: edifici trasparenti.\nLe lettere del pannello premono i suoi pulsanti (Maiusc: come un clic con Maiusc). Canc: il primo della selezione.\nPausa: pausa. + e - del tastierino numerico: velocità x1, x2, x4. F1: finestra della missione.\nEsc: annullare la costruzione, altrimenti menu di gioco. Frecce, bordo della finestra o trascinamento col tasto centrale: scorrere.
+# review pass: formal Lei forms in lowercase inside a sentence
+#@ en=26c5e8 src=fix
+net.type_name = Digiti il suo nome.
+# review pass: formal Lei forms in lowercase inside a sentence
+#@ en=56abf3 src=fix
+net.saved_rejoin = Partecipa la ospita di nuovo su questo PC; gli altri\nsi collegano a lei e tornano ai loro posti.
+# review pass: formal Lei forms in lowercase inside a sentence
+#@ en=997e3a src=fix
+crash.box = Entente Engine si è bloccato. Ci scusi!\n\nUn breve rapporto è stato salvato come\n{path}\n\nInvii quel file a chi le ha dato il gioco.
+# review pass: formal Lei forms in lowercase inside a sentence
+#@ en=883b15 src=fix
+start.failed = Entente Engine non è riuscito ad avviarsi.\n\nIl motivo è scritto nel file più recente della cartella %APPDATA%\\EntenteEngine\\logs (incolli questo percorso nella barra degli indirizzi di una finestra di Esplora file). Invii quel file a chi le ha dato il gioco.
+# review pass: names of buttons and messages in texts match the interface text
+#@ en=0e5b3c src=fix
+game.build_more_houses = Costruisca più abitazioni.
