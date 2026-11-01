@@ -18,6 +18,10 @@ It is a free hobby project. Its own menus are in English, German, Italian and Ru
 briefings come from your copy of the game (English on Steam). Versions are numbered by
 year: 2026.1 is the first release of 2026.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/20b49c70-7d77-4e72-a8bf-17e68a6bb481" alt="A big battle with the standard rules" width="900">
+</p>
+
 > [!IMPORTANT]
 > **You need your own copy of The Entente Gold**, for example from Steam. Entente Engine contains none of the game's files: no pictures, sounds, maps or mission texts. It reads them from your own copy of The Entente Gold. To play the same game, the code does include some numbers from the original program (such as research prices and shell values) and the few words painted on the game's buttons, which it translates for the menus. It never changes your copy, and the original game keeps working as before.
 
@@ -39,6 +43,12 @@ guide, with network play, saves, updating and a troubleshooting list, is in **[d
 | **Comfort** | Any window size, widescreen and full screen; interface scale for big screens; smooth scrolling; mouse wheel zoom; network games for up to 8 players with rejoin and autosave. | [Features](docs/FEATURES.md#interface-and-comfort) |
 | **Faster** | On the same saves and PC, the original's own program needed about twice the time per game turn; ours keeps full game speed up to the biggest save measured (86,415 units) and stutters far less. | [Features](docs/FEATURES.md#performance) |
 | **New: Plus** | An optional skirmish rule set: a reworked economy and research list, the Building Academy, counter-battery fire, a smarter computer army and call-in strikes. | [Entente Engine Plus](docs/PLUS.md) |
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/37c47bea-d640-4c42-9b50-522f14415def" alt="A town" width="32%">
+  <img src="https://github.com/user-attachments/assets/33706044-ca93-4df2-a9de-19ac3718b0e7" alt="An airfield" width="32%">
+  <img src="https://github.com/user-attachments/assets/a68d5b96-c0ec-4b7a-952a-0e18c830f69d" alt="A coast" width="32%">
+</p>
 
 ## Building from source
 
