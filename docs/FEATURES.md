@@ -15,7 +15,7 @@ or show only in rare cases.
 - [Missions and campaigns](#missions-and-campaigns)
 - [Interface and comfort](#interface-and-comfort)
 - [Pictures](#pictures)
-- [Sound](#sound)
+- [Sound and video](#sound-and-video)
 - [Multiplayer](#multiplayer)
 - [Languages](#languages)
 - [Performance](#performance)
@@ -36,8 +36,8 @@ Crashes and hangs of the original that cannot happen in Entente Engine:
 
 - **The frozen mouse.** In the original the pointer and clicks can stop working while the music plays on, until you
   switch to another window and back. Entente Engine reads the mouse the ordinary Windows way, so this cannot happen.
-- **The intro crash.** The original now and then dies during the intro, when it shuts its window down for the video.
-  Entente Engine never does that, and this release skips the game's videos altogether.
+- **The intro crash.** The original now and then dies during the intro. Here the videos play inside the game's own
+  window, with nothing shut down and restarted in between.
 - **The 8-player start crash.** Starting 8 players on the map "newhouses" crashed the original at random. Now a map
   gets only as many players as it has starting places, and every player gets a real one.
 - **A broken map in the list.** A map whose file does not load is left out of the list, and Start never opens a game
@@ -139,7 +139,7 @@ The original's saves lose or change several things on loading. Entente Engine's 
 - **Clicking buildings:** any visible part of a building selects it (in the original a click on a roof or tower often
   did nothing).
 - **Keys:** Shift with a panel letter works; pressing a group key twice centres the view; the main menu's letter keys
-  work in either case; Esc cancels fire at a point.
+  work in either case; Esc cancels fire at a point; a click, Esc, Space or Enter skips a video.
 - **The building preview** shows fields only where they will grow, the building where it will stand, and no stream of
   refusal sounds while you drag.
 - **Mission messages** come one at a time, oldest first, and can all be read again in the mission window (F1).
@@ -161,13 +161,14 @@ The original's saves lose or change several things on loading. Entente Engine's 
 - Water and coast foam stay put on the map while you scroll, and a ship's reflection no longer lies over its
   neighbours.
 
-## Sound
+## Sound and video
 
 - A collapsing building plays its collapse sound (the original played the science academy's).
 - Half of the Russian artillery's voices are heard again, and the British hear their anthem (both were misspelt file
   names in the original).
 - Menu clicks are no longer cut short.
 - The music comes back after the Medal button with videos switched off.
+- Videos keep their shape at any window size.
 
 ## Multiplayer
 

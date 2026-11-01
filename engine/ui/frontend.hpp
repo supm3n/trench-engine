@@ -162,8 +162,10 @@ void frontend_set_display_font(const std::string& path);
 // Ours (docs/download.md "The updater", and the public build's Releases notice, platform/release_check.hpp): on, every
 // front-end opened after the call draws "Check for updates" small above the build label in the main menu's corner, a
 // click on it asks for CheckUpdates, and Game options has the row "Check for updates" (Settings::check_updates). Off
-// (the default: the browser, batch runs and every build with neither): neither.
-void frontend_set_update_link(bool on);
+// (the default: the browser, batch runs and every build with neither): neither. corner_link false keeps the Game options
+// row but draws no corner text (the public build: its check at the start speaks only when a newer version is out, and
+// "Check for updates" beside the version read like a notice that one was).
+void frontend_set_update_link(bool on, bool corner_link = true);
 
 
 

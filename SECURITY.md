@@ -37,11 +37,11 @@ The exe is not signed with a paid certificate, so Windows SmartScreen warns on t
   start. While you look for games, it asks on your home network (UDP port 47624) which games are there; a game you
   host listens on TCP port 47625. Network games between players are not encrypted, and the game password travels in
   plain text, so do not reuse a password from anywhere else.
-- **The check for a new version:** at each start, and when you click **Check for updates** in the main menu, it asks
+- **The check for a new version:** at each start it asks
   GitHub (api.github.com) which version is the newest one on the Releases page. It sends nothing about you or your
   games; as with any website, GitHub sees your internet address and which version of Entente Engine asks. It never
   downloads or installs anything: if a newer version is out, it only tells you and can open the page in your browser.
-  To turn the check at the start off, set **Check for updates** to Off in Game options.
+  To turn the check off, set **Check for updates** to Off in Game options.
 
 Crash reports and logs stay on your PC. They are sent to nobody unless you attach them to an issue yourself; please
 look through them first if you like.

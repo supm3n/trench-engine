@@ -14,6 +14,14 @@ namespace antanta::ui {
 
 enum class VideoRun { None, Startup, Credits };
 
+// The files a video is looked for in, in order: the game's own Windows Media file in its Media folder (the names
+// Media/Video.inf and Media/Credits.inf give: Buka.wmv, Intro-en.wmv, Credits.wmv; desktop Windows plays them through
+// Media Foundation), then the MPEG-1 copy tools/convert_videos.cmd makes (<name>.mpg). `name` is buka, intro-en or
+// credits. An empty folder leaves its kind out (the browser passes no Media folder). The host plays the first that
+// opens.
+std::vector<std::string> video_sources(const std::string& name, const std::string& media_dir,
+                                       const std::string& converted_dir);
+
 class VideoSequence {
   public:
     void set_enabled(bool enabled) { enabled_ = enabled; }

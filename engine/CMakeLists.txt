@@ -424,8 +424,13 @@ if(MSVC)
 else()
   target_compile_options(plmpeg PRIVATE -w)
 endif()
-add_library(antanta_video STATIC ui/video_decoder.cpp ui/video_host.cpp)
+# On desktop Windows the game's own .wmv files play first, through Windows Media Foundation (ui/video_decoder_mf.cpp;
+# mfplat and mfreadwrite are Windows' own DLLs, missing only on N editions without the Media Feature Pack).
+add_library(antanta_video STATIC ui/video_decoder.cpp ui/video_decoder_mf.cpp ui/video_host.cpp)
 target_link_libraries(antanta_video PUBLIC antanta_ui plmpeg SDL3::SDL3-static PRIVATE antanta_engine_rules)
+if(WIN32 AND NOT EMSCRIPTEN)
+  target_link_libraries(antanta_video PRIVATE mfplat mfreadwrite mfuuid ole32)
+endif()
 target_link_libraries(antanta PRIVATE antanta_video)
 if(EMSCRIPTEN)
   target_link_options(antanta-headless PRIVATE -sNODERAWFS=1 -sALLOW_MEMORY_GROWTH=1 -sSTACK_SIZE=4MB

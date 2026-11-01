@@ -8,6 +8,7 @@ This guide takes you from the download to your first game, and helps when someth
 - [The Windows warning on the first start](#the-windows-warning-on-the-first-start)
 - [Finding your copy of the game](#finding-your-copy-of-the-game)
 - [The first start](#the-first-start)
+- [Extra maps](#extra-maps)
 - [Where your saves and settings live](#where-your-saves-and-settings-live)
 - [Options worth knowing](#options-worth-knowing)
 - [Playing over the network](#playing-over-the-network)
@@ -85,7 +86,8 @@ you chose.
 
 ## The first start
 
-The main menu opens. Your version number is in its bottom right corner, for example "Entente Engine 2026.1".
+The game's logo and intro videos play first (a click, Esc, Space or Enter skips them), then the main menu opens. Your
+version number is in its bottom right corner, for example "Entente Engine 2026.1".
 
 - **Single Player** has the skirmish (Random Maps), the missions and the campaigns, as in the original.
 - **Network game** hosts or joins a game with other players (see below).
@@ -93,6 +95,13 @@ The main menu opens. Your version number is in its bottom right corner, for exam
 
 The menus follow your Windows language where Entente Engine has a translation (English, German, Italian, Russian);
 you can change it in Game options. Mission texts and briefings come from your copy of the game (English on Steam).
+
+## Extra maps
+
+The skirmish list shows the maps in the game's `Maps` folder. Maps from other versions of the game (for example the
+five extra maps of version 1.2) appear by themselves when both of their files, `<name>.dat` and `<name>_m.min`, are in
+that folder. The Steam copy's map "Fran_2r_2" is damaged, so Entente Engine leaves it out of the list; an intact
+`Fran_2r_2.dat` in its place brings it back. For a network game on an extra map, every player should have it too.
 
 ## Where your saves and settings live
 
@@ -168,8 +177,8 @@ Please note: the game password is sent without encryption, so do not use a passw
 
 Entente Engine never updates itself. When it starts, it asks GitHub (api.github.com) which version is the newest one
 on the Releases page. If there is a newer one than yours, a small window tells you so, and its button opens that page
-in your browser. Nothing is downloaded or installed for you. You can also click **Check for updates** in the bottom
-right corner of the main menu. To turn off the check at the start, set **Check for updates** to Off in Game options.
+in your browser. If yours is the newest, it says nothing. Nothing is downloaded or installed for you. To turn the
+check off, set **Check for updates** to Off in Game options.
 
 To update:
 
@@ -201,7 +210,9 @@ See [The Windows warning on the first start](#the-windows-warning-on-the-first-s
 want to be sure the file is the real one.
 
 **The intro and other videos do not play.**
-The game's videos are skipped in this release. Everything else plays as usual.
+Entente Engine plays the videos from your copy's `Media` folder with Windows' own video support. The "N" editions
+of Windows lack it until the free Media Feature Pack from Microsoft is installed; without it the videos are skipped
+and everything else plays as usual.
 
 **Nobody can join my network game, or the list of games stays empty.**
 Allow Entente Engine in the Windows Firewall for private networks (Windows Security, Firewall and network

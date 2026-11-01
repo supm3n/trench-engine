@@ -71,20 +71,18 @@ bool is_video_skip_event(const SDL_Event& e) {
 VideoHost::VideoHost() = default;
 VideoHost::~VideoHost() { close_current(); }
 
-void VideoHost::configure(std::string dir, bool enabled, VideoHooks hooks) {
-    dir_ = std::move(dir);
-    if (!dir_.empty() && dir_.back() != '/' && dir_.back() != '\\') dir_ += '/';
+void VideoHost::configure(std::string media_dir, std::string converted_dir, bool enabled, VideoHooks hooks) {
+    media_dir_ = std::move(media_dir);
+    converted_dir_ = std::move(converted_dir);
     seq_.set_enabled(enabled);
     hooks_ = std::move(hooks);
 }
 
 bool VideoHost::play_startup(SDL_Renderer* renderer) {
-    return start(seq_.start_startup({dir_ + "buka.mpg", dir_ + "intro-en.mpg"}), renderer);
+    return start(seq_.start_startup({"buka", "intro-en"}), renderer);
 }
 
-bool VideoHost::play_credits(SDL_Renderer* renderer) {
-    return start(seq_.start_credits(dir_ + "credits.mpg"), renderer);
-}
+bool VideoHost::play_credits(SDL_Renderer* renderer) { return start(seq_.start_credits("credits"), renderer); }
 
 bool VideoHost::start(bool ok, SDL_Renderer* renderer) {
     if (!ok) return false;
@@ -99,42 +97,55 @@ void VideoHost::set_volume(float gain) {
     if (player_ && player_->audio) SDL_SetAudioStreamGain(player_->audio, gain_);
 }
 
-// Opens the file the sequence is at; one that cannot be opened is logged and skipped like a skipped video.
+// Opens the video the sequence is at, from the first of its files that opens (video_sources). One that none of them
+// opens is logged with every reason and skipped like a skipped video.
 void VideoHost::open_current(SDL_Renderer* renderer) {
     close_current();
     while (seq_.active()) {
-        std::string err;
-        auto decoder = VideoDecoder::open(seq_.current(), &err);
-        if (decoder) {
+        std::string reasons;
+        for (const std::string& file : video_sources(seq_.current(), media_dir_, converted_dir_)) {
+            std::string err;
+            auto decoder = VideoDecoder::open(file, &err);
+            if (!decoder) {
+                reasons += (reasons.empty() ? "" : "; ") + err;
+                continue;
+            }
             auto p = std::make_unique<Player>();
             p->texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING,
                                            decoder->width(), decoder->height());
-            if (p->texture) {
-                SDL_SetTextureBlendMode(p->texture, SDL_BLENDMODE_NONE);
-                SDL_SetTextureScaleMode(p->texture, SDL_SCALEMODE_LINEAR);  // filtered when scaled to the window
-                if (decoder->samplerate() > 0 && SDL_InitSubSystem(SDL_INIT_AUDIO)) {
-                    const SDL_AudioSpec spec{SDL_AUDIO_F32, 2, decoder->samplerate()};
-                    p->audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
-                    if (!p->audio) SDL_Log("video: no sound for %s: %s", seq_.current().c_str(), SDL_GetError());
-                }
-                if (p->audio) SDL_SetAudioStreamGain(p->audio, gain_);
-                decoder->set_audio_lead(0.2);
-                p->decoder = std::move(decoder);
-                p->start_ns = SDL_GetTicksNS();
-                SDL_Log("video: playing %s (%d x %d%s)", seq_.current().c_str(), p->decoder->width(),
-                        p->decoder->height(), p->audio ? ", with sound" : ", no sound");
-                player_ = std::move(p);
-                return;
+            if (!p->texture) {
+                reasons += (reasons.empty() ? "" : "; ") + file + ": " + SDL_GetError();
+                continue;
             }
-            err = std::string(seq_.current()) + ": " + SDL_GetError();
+            SDL_SetTextureBlendMode(p->texture, SDL_BLENDMODE_NONE);
+            SDL_SetTextureScaleMode(p->texture, SDL_SCALEMODE_LINEAR);  // filtered when scaled to the window
+            if (decoder->samplerate() > 0 && SDL_InitSubSystem(SDL_INIT_AUDIO)) {
+                const SDL_AudioSpec spec{SDL_AUDIO_F32, 2, decoder->samplerate()};
+                p->audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
+                if (!p->audio) SDL_Log("video: no sound for %s: %s", file.c_str(), SDL_GetError());
+            }
+            if (p->audio) SDL_SetAudioStreamGain(p->audio, gain_);
+            decoder->set_audio_lead(0.2);
+            p->decoder = std::move(decoder);
+            p->start_ns = SDL_GetTicksNS();
+            if (!reasons.empty()) SDL_Log("video: fell back, %s", reasons.c_str());
+            SDL_Log("video: playing %s (%d x %d at %.2f fps%s)", file.c_str(), p->decoder->width(),
+                    p->decoder->height(), p->decoder->framerate(), p->audio ? ", with sound" : ", no sound");
+            playing_ = file;
+            player_ = std::move(p);
+            return;
         }
-        SDL_Log("video: skipped, %s", err.c_str());
+        SDL_Log("video: skipped %s, %s", seq_.current().c_str(),
+                reasons.empty() ? "no file to look in" : reasons.c_str());
         seq_.finish_current();
     }
     end();
 }
 
-void VideoHost::close_current() { player_.reset(); }
+void VideoHost::close_current() {
+    player_.reset();
+    playing_.clear();
+}
 
 void VideoHost::end() {
     close_current();

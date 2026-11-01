@@ -4,6 +4,27 @@
 
 namespace antanta::ui {
 
+namespace {
+std::string in(const std::string& dir, const std::string& file) {
+    if (dir.empty() || dir.back() == '/' || dir.back() == '\\') return dir + file;
+    return dir + '/' + file;
+}
+}  // namespace
+
+std::vector<std::string> video_sources(const std::string& name, const std::string& media_dir,
+                                       const std::string& converted_dir) {
+    static const char* const kOriginal[][2] = {
+        {"buka", "Buka.wmv"}, {"intro-en", "Intro-en.wmv"}, {"credits", "Credits.wmv"}};
+    std::vector<std::string> out;
+    if (!media_dir.empty()) {
+        for (const auto& o : kOriginal) {
+            if (name == o[0]) out.push_back(in(media_dir, o[1]));
+        }
+    }
+    if (!converted_dir.empty()) out.push_back(in(converted_dir, name + ".mpg"));
+    return out;
+}
+
 bool VideoSequence::begin(VideoRun run, std::vector<std::string> files) {
     if (!enabled_ || active() || files.empty()) return false;
     run_ = run;

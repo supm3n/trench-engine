@@ -31,8 +31,10 @@ class VideoHost {
     VideoHost(const VideoHost&) = delete;
     VideoHost& operator=(const VideoHost&) = delete;
 
-    // dir holds buka.mpg, intro-en.mpg and credits.mpg (tools/convert_videos.cmd). enabled is the `+video` switch.
-    void configure(std::string dir, bool enabled, VideoHooks hooks);
+    // media_dir is the game's Media folder with the original .wmv files (empty: not used, the browser);
+    // converted_dir holds buka.mpg, intro-en.mpg and credits.mpg (tools/convert_videos.cmd; empty: none). Each video
+    // plays from the first of video_sources() that opens. enabled is the `+video` switch.
+    void configure(std::string media_dir, std::string converted_dir, bool enabled, VideoHooks hooks);
 
     // Buka, then the intro. False when nothing plays (videos off, or no file could be opened): the menu is already
     // there. Never fails the app: a file that cannot be opened is logged and skipped.
@@ -53,6 +55,8 @@ class VideoHost {
     void set_volume(float gain);
 
     const VideoSequence& sequence() const { return seq_; }
+    // The file of the video playing; empty when none is.
+    const std::string& playing() const { return playing_; }
 
   private:
     struct Player;
@@ -62,7 +66,8 @@ class VideoHost {
     void end();
 
     VideoSequence seq_;
-    std::string dir_;
+    std::string media_dir_, converted_dir_;
+    std::string playing_;  // the file of the video playing
     VideoHooks hooks_;
     float gain_ = 1.0f;
     std::unique_ptr<Player> player_;

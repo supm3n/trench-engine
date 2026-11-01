@@ -880,6 +880,7 @@ int item_dy(const Widget& w, int k) {
 }
 
 bool g_update_link = false;       // frontend_set_update_link
+bool g_update_corner = false;     // frontend_set_update_link's corner_link
 constexpr int kUpdateRowY = 606;  // its row in Game options
 constexpr int kSimThreadY = 334;  // ours: the sim thread's row (docs/sim-thread.md), above the interface rows
 constexpr int kLanguageY = 600;   // ours: the language's row (docs/languages.md 4), right column, last
@@ -2590,7 +2591,7 @@ void make_corner_texts(Frontend& f) {
         if (f.build_label) TTF_SetTextColor(f.build_label.get(), 0xff, 0xf7, 0x99, 0xff);
     }
     f.update_link.reset();
-    if (g_update_link) {
+    if (g_update_link && g_update_corner) {
         const std::string link = ours(f, "menu.check_updates");
         check_drawn(f.lang, link);
         f.update_link.reset(TTF_CreateText(f.engine, f.font16, link.c_str(), 0));
@@ -4409,7 +4410,10 @@ void frontend_set_display_font(const std::string& path) { g_display_font = path;
 void frontend_set_build_label(const std::string& version, bool developer) {
     g_build_version = version, g_build_developer = developer;
 }
-void frontend_set_update_link(bool on) { g_update_link = on; }
+void frontend_set_update_link(bool on, bool corner_link) {
+    g_update_link = on;
+    g_update_corner = on && corner_link;
+}
 
 bool frontend_game_message(Frontend& f, const std::string& text, bool end, std::string* error) {
     f.stack.clear();

@@ -109,7 +109,8 @@
 //   campaign_missions[:pick=<row>] that campaign's mission list; with
 //   --start, "ok" and Load start the selected mission in batch mode. The Lua missions (.mit) run their script (M5).
 //   Videos (docs/sound.md section 5): with --menu in a window, Buka and the intro play before the menu and the credits
-//   on the Medal button, from <repo>/out/videos (--videos <folder>); Esc skips one. --video 0 (or +video 0) turns them
+//   on the Medal button, on Windows from the game's own Media/*.wmv (Media Foundation), else from the converted files
+//   in <repo>/out/videos (--videos <folder>); Esc skips one. --video 0 (or +video 0) turns them
 //   off. A missing folder or file is logged and skipped. Batch runs never play them.
 //   Updates (docs/INSTALL.md "Updating"): on Windows the menu asks GitHub which release of Entente Engine is the
 //   newest, at every start (unless Game options' "Check for updates" is off) and on the menu's "Check for updates".
@@ -399,8 +400,9 @@ struct App {
     ui::Profiles profiles;
     std::optional<std::uint32_t> seed;  // --seed
     // The videos (docs/sound.md section 5): Buka, the intro, then the menu; the credits on the Medal button. Never in
-    // batch or headless runs. --video 0 or +video 0 turns them off, --videos <folder> names the converted files (on
-    // the web they are /game/videos/, which the page fills).
+    // batch or headless runs. --video 0 or +video 0 turns them off. On desktop Windows the game's Media/*.wmv play
+    // first; --videos <folder> names the converted files, the fallback (on the web the only source: /game/videos/,
+    // which the page fills).
     ui::VideoHost video;
     bool videos_on = true;
     std::string videos_dir;
@@ -5950,9 +5952,14 @@ SDL_AppResult run_net_menu_batch(App& app) {
 }
 #endif
 
-// Where the converted videos are and what the video player does to the music: the player calls pause when the first
-// video starts and resume after the last one (or at once if none could be opened), docs/sound.md section 5.
+// Where the videos are and what the video player does to the music: the player calls pause when the first video
+// starts and resume after the last one (or at once if none could be opened), docs/sound.md section 5. On desktop
+// Windows the game's own .wmv files in its Media folder come first (Media Foundation), the converted files second.
 void configure_videos(App& app) {
+    std::string media;
+#if defined(_WIN32) && !defined(__EMSCRIPTEN__)
+    media = app.game_dir + "/Media";
+#endif
     std::string dir = app.videos_dir;
 #ifdef __EMSCRIPTEN__
     dir = app.game_dir + "/videos";  // the page unpacks them with the game's files (tools/web_game_files.py)
@@ -5969,7 +5976,7 @@ void configure_videos(App& app) {
     ui::VideoHooks hooks;
     hooks.pause_music = [&app] { audio::audio_video_pause(app.audio.get()); };
     hooks.resume_music = [&app] { audio::audio_video_resume(app.audio.get()); };
-    app.video.configure(dir, app.videos_on, std::move(hooks));
+    app.video.configure(media, dir, app.videos_on, std::move(hooks));
     app.video.set_volume(video_volume(app.settings));
 }
 
@@ -6142,12 +6149,12 @@ void lang_sync_frame(App& app) {
 
 #ifdef ANTANTA_RELEASE_CHECK
 // The public build's Releases notice (platform/release_check.hpp, decisions.md 40): it never updates itself. The
-// windowed menu asks GitHub for the newest release at every start (unless Game options' "Check for updates" is off)
-// and on the menu's "Check for updates"; batch runs never ask. A newer one is shown in a box whose button opens its
+// windowed menu asks GitHub for the newest release at every start (unless Game options' "Check for updates" is off);
+// no corner text in the menu (it read like a notice); batch runs never ask. A newer one is shown in a box whose button opens its
 // page in the browser; nothing is downloaded. A failure is one line in the session log (and a box only when asked).
 void start_release_check(App& app) {
     app.releases = std::make_unique<release_check::Checker>(ANTANTA_VERSION);
-    ui::frontend_set_update_link(true);
+    ui::frontend_set_update_link(true, false);  // the Game options row only, no corner text
     if (app.settings.check_updates) app.releases->check(false);
 }
 
