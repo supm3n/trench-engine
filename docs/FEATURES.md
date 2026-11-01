@@ -206,6 +206,19 @@ computers, saved at four points; medians of 3 rounds):
 Speed is in game steps a second at normal speed; full speed is 33.3. Turn time is how long the program needs to work
 out one game turn.
 
+**Pictures a second on the same saves** (normal game speed, medians of 3 rounds):
+
+| Units on the map | Still camera, original | Still camera, ours | Scrolling, original | Scrolling, ours |
+|---|---|---|---|---|
+| 1,383 | 32 | 234 | 63 | 224 |
+| 11,768 | 32 | 223 | 53 | 208 |
+| 52,160 | 32 | 120 | 35 | 132 |
+| 86,415 | 30 | 110 | 33 | 82 |
+
+Ours was measured in a window without vsync, so it drew as many pictures as it could; when you play, it follows your
+screen's refresh rate. The original's higher numbers while scrolling come from one of its bugs: edge scrolling skips
+its frame limiter, so the whole game runs faster while you scroll (Entente Engine keeps one steady game clock).
+
 What this means, fairly:
 
 - The original is **not slow at its own job** on a current PC. It keeps nearly full speed up to about 52,000 units

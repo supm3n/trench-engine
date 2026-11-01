@@ -43,7 +43,7 @@ guide, with network play, saves, updating and a troubleshooting list, is in **[d
 |---|---|---|
 | **Fixed** | Crashes and freezes of the original that cannot happen here, among them the well-known frozen mouse and the 8-player start crash. Saves that keep everything. Many gameplay, mission, sound and drawing bugs. | [Features](docs/FEATURES.md#crashes-and-freezes) |
 | **Comfort** | Any window size, widescreen and full screen; interface scale for big screens; smooth scrolling; mouse wheel zoom; network games for up to 8 players with rejoin and autosave. | [Features](docs/FEATURES.md#interface-and-comfort) |
-| **Faster** | About half the original's time per game turn on the same saves and PC, full game speed up to the biggest save measured (86,415 units), and far less stutter. | [Features](docs/FEATURES.md#performance) |
+| **Faster** | About half the original's time per game turn on the same saves and PC, 110 to 234 pictures a second instead of about 30, full game speed up to the biggest save measured (86,415 units), and far less stutter. | [Performance](#performance-at-a-glance) |
 | **New: Plus** | An optional skirmish rule set: a reworked economy and research list, the Building Academy, counter-battery fire, a smarter computer army and call-in strikes. | [Entente Engine Plus](docs/PLUS.md) |
 
 <p align="center">
@@ -51,6 +51,40 @@ guide, with network play, saves, updating and a troubleshooting list, is in **[d
   <img src="https://github.com/supm3n/trench-engine/releases/download/v2026.1/screenshot-airfield.jpg" alt="An airfield" width="32%">
   <img src="https://github.com/supm3n/trench-engine/releases/download/v2026.1/screenshot-coast.jpg" alt="A coast" width="32%">
 </p>
+
+## Performance at a glance
+
+The original program and Entente Engine on the same saves of a 4 against 4 skirmish, on the same PC.
+
+**Pictures a second** at normal game speed, still camera (longer is better):
+
+```
+Small game,    1,383 units   original        ████                            32
+                             Entente Engine  ██████████████████████████████  234
+Huge battle,  86,415 units   original        ████                            30
+                             Entente Engine  ██████████████                  110
+```
+
+**Stutter** on the huge battle, full screen at 3840 x 2160: pictures more than 50 ms late, per minute (shorter is
+better):
+
+```
+Watching                     original        ███████                         22
+                             Entente Engine  █                               2.7
+After "select all, move"     original        ██████████████████████████████  92
+                             Entente Engine  ███                             8.3
+```
+
+**A big order:** 16,000 units told to move start walking within about a second, instead of over 2 min 38 s.
+
+**Game speed:** full speed is 33 game steps a second. Entente Engine holds it on every save; the original runs at
+about 32, and 30 on the huge battle. Entente Engine also needs about half the original's time to work out each step.
+
+Fair to know: the original shows one picture per game step by design, so about 30 a second. Entente Engine draws
+between the steps with the movement blended, so motion looks smoother, most of all on high refresh screens. The
+pictures-a-second numbers were measured without vsync; when you play, the picture follows your screen's refresh rate.
+One PC, an AMD Ryzen 9 9950X3D, 1280 x 1024 unless noted. All numbers and how they were measured:
+[docs/FEATURES.md](docs/FEATURES.md#performance).
 
 ## Verifying your download
 
