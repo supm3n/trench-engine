@@ -19,7 +19,7 @@ briefings come from your copy of the game (English on Steam). Versions are numbe
 year: 2026.1 is the first release of 2026.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/20b49c70-7d77-4e72-a8bf-17e68a6bb481" alt="A big battle with the standard rules" width="900">
+  <img src="https://github.com/supm3n/trench-engine/releases/download/v2026.1/screenshot-battle.jpg" alt="A big battle with the standard rules" width="900">
 </p>
 
 > [!IMPORTANT]
@@ -47,9 +47,9 @@ guide, with network play, saves, updating and a troubleshooting list, is in **[d
 | **New: Plus** | An optional skirmish rule set: a reworked economy and research list, the Building Academy, counter-battery fire, a smarter computer army and call-in strikes. | [Entente Engine Plus](docs/PLUS.md) |
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/37c47bea-d640-4c42-9b50-522f14415def" alt="A town" width="32%">
-  <img src="https://github.com/user-attachments/assets/33706044-ca93-4df2-a9de-19ac3718b0e7" alt="An airfield" width="32%">
-  <img src="https://github.com/user-attachments/assets/a68d5b96-c0ec-4b7a-952a-0e18c830f69d" alt="A coast" width="32%">
+  <img src="https://github.com/supm3n/trench-engine/releases/download/v2026.1/screenshot-town.jpg" alt="A town" width="32%">
+  <img src="https://github.com/supm3n/trench-engine/releases/download/v2026.1/screenshot-airfield.jpg" alt="An airfield" width="32%">
+  <img src="https://github.com/supm3n/trench-engine/releases/download/v2026.1/screenshot-coast.jpg" alt="A coast" width="32%">
 </p>
 
 ## Verifying your download
