@@ -34,7 +34,8 @@ You do not need to start the original game first, and you do not need to change 
 
 ## Installing
 
-1. Open the **[Releases page](https://github.com/supm3n/trench-engine/releases)** and download the newest version.
+1. Open the **[Releases page](https://github.com/supm3n/trench-engine/releases)**, download the zip file of the
+   newest version and unzip it.
 2. Check the download's fingerprint if you like (see [Verifying your download](../README.md#verifying-your-download)).
 3. Put `EntenteEngine.exe` into the game's folder, next to the original `Antanta.exe`. In Steam, right-click the
    game, then **Manage**, **Browse local files** to open that folder. Windows may ask for permission to copy the file
@@ -48,8 +49,8 @@ Please keep in mind:
 - Entente Engine only reads the game's files and never changes them. Your saves and settings go to your own user
   folder (see [Where your saves and settings live](#where-your-saves-and-settings-live)), so it needs no
   administrator rights to run.
-- **Any other folder works too.** Entente Engine finds a Steam copy by itself wherever the exe is, and asks for the
-  game's folder only if it cannot find it (see below).
+- **Another folder works too,** if you prefer to keep the exe elsewhere. Entente Engine still finds a Steam copy by
+  itself, and asks for the game's folder only if it cannot find it (see below).
 
 ## The Windows warning on the first start
 
@@ -114,7 +115,8 @@ at the end, **Full screen**. **Alt+Enter** switches between the two at any time.
 size or maximise it; the game remembers its size and place for the next start. Full screen fills your screen at its
 own resolution and leaves your monitor's settings alone.
 
-In the main menu: **Options**, then **Game options**.
+**Game options:** in the main menu, click **Options**, then **Game options**. The Rules choice is on the skirmish
+setup screen instead.
 
 | Option | What it does |
 |---|---|
@@ -146,7 +148,8 @@ game.
 - **On the same home network:** in the main menu click **Network game**. Games on the same network show up in the list
   by themselves. To host, click **Create** and set up the game; the others pick it from the list and click **Join**.
   A password is optional.
-- **Over the internet:** the host gives the others their internet address, and the others type it on the first page.
+- **Over the internet:** the host tells the others the host's internet address, and they type it on the first page
+  of **Network game**.
   The host's router must forward **TCP port 47625** to the host's PC.
 - **The Windows Firewall:** the first time you host or look for games, Windows asks whether Entente Engine may use the
   network. Allow it for private networks; without it nobody can join and the list stays empty. Entente Engine uses
@@ -155,17 +158,18 @@ game.
   they can rejoin and take it back. A player who leaves is replaced by the computer. Network games autosave, and a
   saved network game can be continued from the network page.
 
-Entente Engine connects to nothing else: only the network games you start, and while you look for games it asks on
-your home network (a broadcast) which games are there.
+Apart from the check for a new version (see [Updating](#updating)), Entente Engine connects to nothing else: only
+the network games you start, and while you look for games it asks on your home network (a broadcast) which games are
+there.
 
 Please note: the game password is sent without encryption, so do not use a password you use anywhere else.
 
 ## Updating
 
-Entente Engine never updates itself. When it starts, it asks GitHub which version is the newest one on the Releases
-page. If there is a newer one than yours, a small window tells you so, and its button opens that page in your
-browser. Nothing is downloaded or installed for you. You can also click **Check for updates** in the bottom right
-corner of the main menu. To stop the question at the start, set **Check for updates** to Off in Game options.
+Entente Engine never updates itself. When it starts, it asks GitHub (api.github.com) which version is the newest one
+on the Releases page. If there is a newer one than yours, a small window tells you so, and its button opens that page
+in your browser. Nothing is downloaded or installed for you. You can also click **Check for updates** in the bottom
+right corner of the main menu. To turn off the check at the start, set **Check for updates** to Off in Game options.
 
 To update:
 
@@ -198,8 +202,6 @@ want to be sure the file is the real one.
 
 **The intro and other videos do not play.**
 The game's videos are skipped in this release. Everything else plays as usual.
-<!-- TODO for the owner: confirm the video situation of the public build; docs/release.md says friends have no
-     converted videos, so the intro and credits are skipped. Remove this item if that changes. -->
 
 **Nobody can join my network game, or the list of games stays empty.**
 Allow Entente Engine in the Windows Firewall for private networks (Windows Security, Firewall and network

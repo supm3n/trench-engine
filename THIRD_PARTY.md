@@ -21,7 +21,7 @@ own licence, which you find in that folder.
 | pl_mpeg (commit c871f2b) | the videos | MIT (in [`pl_mpeg-c871f2b/pl_mpeg.h`](engine/third_party/pl_mpeg-c871f2b/pl_mpeg.h)) |
 | IXWebSocket 12.0.1 | network games | BSD 3-clause ([`IXWebSocket-12.0.1/LICENSE.txt`](engine/third_party/IXWebSocket-12.0.1/LICENSE.txt)) |
 | Black Ops One 1.004 | the display font of the headings | SIL Open Font License 1.1 ([`black-ops-one/OFL.txt`](engine/third_party/black-ops-one/OFL.txt)) |
-| Liberation fonts 2.1.5 | stand-ins for Times New Roman Bold and Arial, used only by a build run from its own build folder | SIL Open Font License 1.1 ([`liberation-fonts-ttf-2.1.5/LICENSE`](engine/third_party/liberation-fonts-ttf-2.1.5/LICENSE)) |
+| Liberation fonts 2.1.5 | stand-ins for Times New Roman Bold and Arial, used only by a developer build run from its own build folder ([docs/BUILDING.md](docs/BUILDING.md#build-options)) | SIL Open Font License 1.1 ([`liberation-fonts-ttf-2.1.5/LICENSE`](engine/third_party/liberation-fonts-ttf-2.1.5/LICENSE)) |
 
 Portions of this software are copyright (c) 2026 The FreeType Project (https://freetype.org). All rights reserved.
 

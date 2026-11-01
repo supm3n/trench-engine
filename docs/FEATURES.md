@@ -1,7 +1,7 @@
 # What Entente Engine fixes and improves
 
 Entente Engine plays The Entente Gold by the original's rules, with the original's maps, pictures, sounds and
-missions. Where the original has a bug, a crash or a loss, Entente Engine fixes it instead of copying it. Changes to
+missions. Where the original has a bug, crashes or loses something, Entente Engine fixes it instead of copying it. Changes to
 gameplay or balance are kept small and are listed here; bigger changes live only in the optional
 [Entente Engine Plus](PLUS.md) rule set.
 
@@ -15,7 +15,7 @@ or show only in rare cases.
 - [Missions and campaigns](#missions-and-campaigns)
 - [Interface and comfort](#interface-and-comfort)
 - [Pictures](#pictures)
-- [Sound and video](#sound-and-video)
+- [Sound](#sound)
 - [Multiplayer](#multiplayer)
 - [Languages](#languages)
 - [Performance](#performance)
@@ -36,8 +36,8 @@ Crashes and hangs of the original that cannot happen in Entente Engine:
 
 - **The frozen mouse.** In the original the pointer and clicks can stop working while the music plays on, until you
   switch to another window and back. Entente Engine reads the mouse the ordinary Windows way, so this cannot happen.
-- **The intro crash.** The original now and then dies during the intro. Here the videos play inside the game's own
-  window, with nothing shut down and restarted in between.
+- **The intro crash.** The original now and then dies during the intro, when it shuts its window down for the video.
+  Entente Engine never does that, and this release skips the game's videos altogether.
 - **The 8-player start crash.** Starting 8 players on the map "newhouses" crashed the original at random. Now a map
   gets only as many players as it has starting places, and every player gets a real one.
 - **A broken map in the list.** A map whose file does not load is left out of the list, and Start never opens a game
@@ -138,8 +138,8 @@ The original's saves lose or change several things on loading. Entente Engine's 
   minus set the game speed: normal, double, four times.
 - **Clicking buildings:** any visible part of a building selects it (in the original a click on a roof or tower often
   did nothing).
-- **Keys:** Shift with a panel letter works, pressing a group key twice centres the view, the main menu's letter keys
-  work in either case, Esc cancels fire at a point, a click, Esc, Space or Enter skips a video.
+- **Keys:** Shift with a panel letter works; pressing a group key twice centres the view; the main menu's letter keys
+  work in either case; Esc cancels fire at a point.
 - **The building preview** shows fields only where they will grow, the building where it will stand, and no stream of
   refusal sounds while you drag.
 - **Mission messages** come one at a time, oldest first, and can all be read again in the mission window (F1).
@@ -147,7 +147,8 @@ The original's saves lose or change several things on loading. Entente Engine's 
 - **Player profiles:** typing a name that exists picks that profile instead of renaming the chosen one; empty names
   are not added.
 - **Windows you drag** follow the pointer, also over their own buttons and at the screen's edge.
-- Pausing keeps the selection panel open; one Shift-click switches a unit once.
+- Pausing keeps the selection panel open. Holding Shift and clicking one of your units adds it to the selection or
+  takes it out, once (the original kept switching it while the button was held).
 
 ## Pictures
 
@@ -160,14 +161,13 @@ The original's saves lose or change several things on loading. Entente Engine's 
 - Water and coast foam stay put on the map while you scroll, and a ship's reflection no longer lies over its
   neighbours.
 
-## Sound and video
+## Sound
 
 - A collapsing building plays its collapse sound (the original played the science academy's).
 - Half of the Russian artillery's voices are heard again, and the British hear their anthem (both were misspelt file
   names in the original).
 - Menu clicks are no longer cut short.
 - The music comes back after the Medal button with videos switched off.
-- Videos keep their shape at any window size.
 
 ## Multiplayer
 
@@ -195,14 +195,15 @@ often with other work running, so single runs vary. Please read them as what the
 **The original's own program against Entente Engine, the same four saves** (a 4 against 4 skirmish with Difficult
 computers, saved at four points; medians of 3 rounds):
 
-| Units on the map | Game speed, original | Game speed, ours | Time for one game turn, original | Time for one game turn, ours |
+| Units on the map | Speed, original | Speed, ours | Turn time, original | Turn time, ours |
 |---|---|---|---|---|
 | 1,383 | 32.0 | 33.4 | 0.42 ms | 0.25 ms |
 | 11,768 | 32.1 | 33.4 | 2.11 ms | 1.14 ms |
 | 52,160 | 31.8 | 33.4 | 8.75 ms | 4.39 ms |
 | 86,415 | 29.8 | 33.4 | 13.48 ms | 7.33 ms |
 
-Game speed is in game steps a second at normal speed; full speed is 33.3.
+Speed is in game steps a second at normal speed; full speed is 33.3. Turn time is how long the program needs to work
+out one game turn.
 
 What this means, fairly:
 
@@ -212,9 +213,9 @@ What this means, fairly:
 - The original draws one picture per game step by design, so it shows 30 to 32 pictures a second. Entente Engine draws
   between steps with moving things blended: 110 to 234 pictures a second on these saves with a still camera. Per
   picture, the original's drawing is cheaper with a still camera; ours is cheaper while scrolling.
-- **Stutter** on the 86,415-unit save, full screen at 3840 x 2160: a picture came more than 50 ms late 22 times a minute
-  in the original (92 times a minute after selecting everything and ordering a move across the map), and 2.7 and 8.3
-  times a minute in Entente Engine.
+- **Stutter** on the 86,415-unit save, full screen at 3840 x 2160, counted as pictures that came more than 50 ms
+  late: 22 times a minute in the original and 2.7 in Entente Engine; after selecting everything and ordering a move
+  across the map, 92 times a minute in the original and 8.3 in Entente Engine.
 - Entente Engine uses more memory with its pictures (514 to 1,042 MB against the original's 444 to 801 MB).
 
 **Other speed points:**
@@ -234,5 +235,6 @@ What this means, fairly:
 - The original's skirmish list (maps that are unfinished stay hidden).
 - Under the standard rules the computer sends one group per attack, and leftovers join the next wave.
 - No extra unit limit beyond the original's (the houses you build set it).
-- Network games keep one numbered order per game step.
+- In network games, orders that several players give at the same moment are carried out one game step after another,
+  a fraction of a second apart, as the original's order numbering needs.
 - In missions, an ally's defeat still ends your game where the mission says so, because some missions rely on it.

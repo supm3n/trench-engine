@@ -27,7 +27,8 @@ year: 2026.1 is the first release of 2026.
 
 ## Download and install
 
-1. Download the newest version from the **[Releases page](https://github.com/supm3n/trench-engine/releases)**.
+1. Download the zip file of the newest version from the
+   **[Releases page](https://github.com/supm3n/trench-engine/releases)** and unzip it.
 2. Put `EntenteEngine.exe` into the game's folder, next to the original `Antanta.exe` (in Steam: right-click the game,
    **Manage**, **Browse local files**).
 3. Double-click it. On the first start Windows may warn about a new, unsigned program: click **More info**, then
@@ -42,7 +43,7 @@ guide, with network play, saves, updating and a troubleshooting list, is in **[d
 |---|---|---|
 | **Fixed** | Crashes and freezes of the original that cannot happen here, among them the well-known frozen mouse and the 8-player start crash. Saves that keep everything. Many gameplay, mission, sound and drawing bugs. | [Features](docs/FEATURES.md#crashes-and-freezes) |
 | **Comfort** | Any window size, widescreen and full screen; interface scale for big screens; smooth scrolling; mouse wheel zoom; network games for up to 8 players with rejoin and autosave. | [Features](docs/FEATURES.md#interface-and-comfort) |
-| **Faster** | On the same saves and PC, the original's own program needed about twice the time per game turn; ours keeps full game speed up to the biggest save measured (86,415 units) and stutters far less. | [Features](docs/FEATURES.md#performance) |
+| **Faster** | About half the original's time per game turn on the same saves and PC, full game speed up to the biggest save measured (86,415 units), and far less stutter. | [Features](docs/FEATURES.md#performance) |
 | **New: Plus** | An optional skirmish rule set: a reworked economy and research list, the Building Academy, counter-battery fire, a smarter computer army and call-in strikes. | [Entente Engine Plus](docs/PLUS.md) |
 
 <p align="center">
@@ -50,11 +51,6 @@ guide, with network play, saves, updating and a troubleshooting list, is in **[d
   <img src="https://github.com/user-attachments/assets/33706044-ca93-4df2-a9de-19ac3718b0e7" alt="An airfield" width="32%">
   <img src="https://github.com/user-attachments/assets/a68d5b96-c0ec-4b7a-952a-0e18c830f69d" alt="A coast" width="32%">
 </p>
-
-## Building from source
-
-The exe is built with a pinned toolchain (CMake, Ninja and llvm-mingw, each checked by SHA-256) and two commands on
-Windows 10 or 11. See **[docs/BUILDING.md](docs/BUILDING.md)**.
 
 ## Verifying your download
 
@@ -66,8 +62,16 @@ Get-FileHash .\EntenteEngine.exe -Algorithm SHA256
 
 The release build is reproducible: the same source and the same toolchain give the same bytes, whatever folder you
 build in. So you can also build the release yourself and compare the two fingerprints
-([how](docs/BUILDING.md#check-a-release-against-your-own-build)). Entente Engine never updates itself; new versions
-are downloaded by hand from the Releases page. More in [SECURITY.md](SECURITY.md).
+([how](docs/BUILDING.md#check-a-release-against-your-own-build)).
+
+Entente Engine never updates itself; new versions are downloaded by hand from the Releases page. At each start it
+asks GitHub (api.github.com) whether a newer version is out and, if so, only tells you. To turn that off, set
+**Check for updates** to Off in Game options. More in [SECURITY.md](SECURITY.md).
+
+## Building from source
+
+The exe is built with a pinned toolchain (CMake, Ninja and llvm-mingw, each checked by SHA-256) and two commands on
+Windows 10 or 11. See **[docs/BUILDING.md](docs/BUILDING.md)**.
 
 ## Licence
 
@@ -87,7 +91,7 @@ the licence, we cannot accept pull requests with code for now; see [CONTRIBUTING
 Entente Engine is an independent fan project. It is **not affiliated with or endorsed by Lesta or ESDigital**. All
 rights to The Entente Gold belong to their owners.
 
-"Antanta" (the original program's own name) appears in this code only as an internal name for folders, targets and
+"Antanta" (the original program's own name) appears in this code only as an internal name for folders, build targets and
 namespaces. The product is Entente Engine.
 
 ## Credits

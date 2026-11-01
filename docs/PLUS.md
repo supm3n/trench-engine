@@ -161,7 +161,7 @@ buildings.
 - **Cavalry and tanks hunt guns** in their range the same way.
 - **The computer keeps a sane mix:** a Difficult computer and your advisors train no more mortar men than one per 12
   riflemen and no more howitzers and cannons than one per 25.
-- Fixed under Plus on the way: groups no longer freeze because one member is stuck, the last players in big games no
+- Also fixed under Plus: groups no longer freeze because one member is stuck, the last players in big games no
   longer wait for their routes, and cavalry's sabre blows hit buildings.
 
 ## Call-in strikes
@@ -195,7 +195,8 @@ home. Under Plus the computers and your military advisor:
 - otherwise attack the nearest valuable enemy building;
 - send small batches to reinforce an army already in the field, and bring idle crowds of under 30 back to an army or
   home, instead of leaving groups of 5 or 10 all over the map;
-- upgrade towers and pillboxes near enemies, and one at a time when rich;
+- upgrade towers and pillboxes that see enemies, are firing or are damaged, and, when the stores hold plenty, the others
+  one at a time, the weakest first;
 - at the unit limit with more than a million food, sell food for iron and gold, and the computers turn their
   factories to tanks, guns and aircraft.
 

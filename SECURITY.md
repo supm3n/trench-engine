@@ -21,7 +21,8 @@ see it. We are a small hobby project and will answer as soon as we can.
   ```
 
 - **Build it yourself.** The release build is reproducible: the same source and toolchain give the same bytes, so a
-  build of the release's tag must have the same SHA-256 ([docs/BUILDING.md](docs/BUILDING.md)).
+  build of the release's tag must have the same SHA-256
+  ([docs/BUILDING.md](docs/BUILDING.md#check-a-release-against-your-own-build)).
 - Download Entente Engine only from this repository's Releases page.
 
 The exe is not signed with a paid certificate, so Windows SmartScreen warns on the first start

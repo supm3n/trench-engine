@@ -10,7 +10,7 @@ Both are very welcome on the [Issues page](https://github.com/supm3n/trench-engi
   report and the newest log (the form says where to find them).
 - **Idea:** something you would like to see, in the standard rules or in [Entente Engine Plus](docs/PLUS.md).
 
-Please look first whether someone already reported the same thing, and add to that issue instead.
+Please check first whether someone has already reported the same thing, and if so, add to that issue instead.
 
 Changes to the game's balance go into Entente Engine Plus, not into the standard rules, which stay as close to the
 original as the bug fixes allow.

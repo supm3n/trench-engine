@@ -2,7 +2,7 @@
 
 Versions are numbered by year: 2026.1 is the first release of 2026, 2026.2 the next one.
 
-## 2026.1 (first public release, date to be set)
+## 2026.1 (the first public release)
 
 The first public release of Entente Engine, for Windows 10 and 11 (64-bit). You need your own copy of
 The Entente Gold.
@@ -20,4 +20,5 @@ The Entente Gold.
   game turn, and much less stutter.
 - **Entente Engine Plus**, an optional skirmish rule set: economy and research rework, the Building Academy,
   counter-battery fire, the computer's army brain and call-in strikes. See [PLUS.md](docs/PLUS.md).
-- Never updates itself; reproducible release build with its SHA-256 on the Releases page.
+- **Safety:** never updates itself; at each start it only asks GitHub whether a newer version is out (switch this off
+  with **Check for updates** in Game options). Reproducible release build, with its SHA-256 on the Releases page.
