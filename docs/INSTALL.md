@@ -1,6 +1,8 @@
 # Installing and playing Entente Engine
 
 This guide takes you from the download to your first game, and helps when something does not work.
+Prefer watching? **[The video on YouTube](https://youtu.be/mgHVgllk7jc)** shows the download, the install and the
+tutorial, step by step.
 
 - [What you need](#what-you-need)
 - [Getting the game](#getting-the-game)

@@ -27,6 +27,10 @@ year: 2026.1 is the first release of 2026.
 
 ## Download and install
 
+**Prefer watching?** The video shows the download, the install and the tutorial, step by step:
+
+<a href="https://youtu.be/mgHVgllk7jc"><img src="https://i.ytimg.com/vi/mgHVgllk7jc/maxresdefault.jpg" alt="Video: The Entente Gold: the game rebuilt for Windows 10 and 11" width="560"></a>
+
 1. Download the zip file of the newest version from the
    **[Releases page](https://github.com/supm3n/trench-engine/releases)** and unzip it.
 2. Put `EntenteEngine.exe` into the game's folder, next to the original `Antanta.exe` (in Steam: right-click the game,
