@@ -294,7 +294,20 @@ struct Unit {                                   // TUnit (0x17c bytes in the ori
     // Our rules (docs/bugs.md B277): the ground unit a fighter goes back to after fighting a plane that shot at it
     // (player 0xff: none). Not in the original.
     UnitRef return_target;
+
+
+    struct QueuedOrder {
+        std::uint8_t kind = 0;
+                                      // 4 enemy unit, 7 own transport to board
+        float x = 0, y = 0;           // the unit's own point (a move: its place in the square; y raised by the ground)
+        std::int32_t px = 0, py = 0;  // the clicked point as the right click passes it (the route's marker)
+        UnitRef unit;                 // kinds 4 and 7: the target
+        HouseRef house;               // kinds 1 and 2: the house (with its generation)
+    };
+    std::vector<QueuedOrder> order_queue;  // at most kOrderQueueMax, the next first
 };
+
+inline constexpr std::size_t kOrderQueueMax = 16;  // B317: the Shift-click points one unit keeps
 
 struct House {  // THouse slot
 
@@ -880,8 +893,13 @@ struct Command {
         // player, strike (0 artillery barrage, 1 creeping barrage, 2 gas attack, 3 bombing run, 4 recon flight), x, y
         // (the target's world point), x2, y2 (the end point of the creeping barrage and the bombing run, else as x, y).
         PlusStrike,
+        // Appended 2026-11-04 (docs/bugs.md B317): not an order of the original but ours, Shift + right click, the
+        // order queue (address 0). No O line of its own. args: player, world x, world y (as ui_order's), the click
+        // kind (0 ground, 1 own house, 2 enemy house, 4 enemy unit, 7 own transport), the target (a unit for 4 and 7,
+        // a house for 1 and 2, else u-); units: the selection. Ignored under original_rules.
+        QueueOrder,
     };
-    static constexpr int kKinds = 46;
+    static constexpr int kKinds = 47;
     Kind kind = Kind::UiOrder;
     std::uint32_t tick = 0;       // the tick the order is applied before
     std::uint32_t oseq = 0;       // order number (0 for an order not taken from a recording: the sim numbers it)
@@ -1101,6 +1119,10 @@ struct GameState {
     std::vector<FlowChange> flow_log;
     std::vector<std::uint32_t> flow_stamp;
     std::uint32_t flow_stamp_id = 0;
+    // Our rules: the land mass of every cell from the terrain alone (Land_Region, sim/pathgrid.cpp), built once.
+    std::vector<std::uint16_t> land_region;
+    // Our rules: the computer saving for its port during its AIScript_Run (set and cleared there), else 0xff.
+    std::uint8_t ai_saving_port = 0xff;
     // The fog of war of MyPlayer's side (sim/fog.hpp): the sight circles of the last rebuild (every 30 ticks, a load,
     // a new game). Not hashed: nothing in the simulation reads it (docs/fog.md 4). The original rebuilds it after a
     // load; our own save keeps it, so a loaded game shows the same fog until the next rebuild (docs/save-own.md).

@@ -9,16 +9,19 @@
 // also the fixed-size tables (so a file whose tables have another size is refused, not misread). All numbers are
 // little-endian, floats and doubles their raw bits, so a file is the same on every target. Chunks: INFO (what the
 // load and save screens list), VIEW (camera, selection, speed), SETU (the skirmish's choices, optional), SIM (the
-// game state, zlib-compressed), LUA (a Lua mission's globals, optional). A chunk with an unknown tag is skipped; a
+// game state, zlib-compressed), GRND (a generated map's ground, zlib-compressed, optional), LUA (a Lua mission's
+// globals, optional). A chunk with an unknown tag is skipped; a
 // newer format or chunk version is refused with a message. The SIM chunk's state hash is checked after the load.
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "formats/bytes.hpp"
+#include "formats/map.hpp"
 #include "sim/skirmish.hpp"
 #include "sim/state.hpp"
 
@@ -78,15 +81,21 @@ struct OwnSaveMeta {
     // Chunk NET (slice MP9): a network game's seats, so any player's save can resume the game (docs/multiplayer.md
     // "Autosave and resume"); none outside a network game. Not in the state hash.
     std::optional<OwnSaveNet> net;
+    // Chunk GRND (slice G7, docs/map-generator-plan.md 6): the map a generated game started from, whole, as
+    // MapGen_Build gave it (a map file's game reads its ground from Maps/<map name> instead). With it the save loads
+    // with any later release, whatever the generator then makes of the code. Not in the state hash. Shared, so a
+    // network autosave writes the game's map without copying it.
+    std::shared_ptr<const MapData> ground;
 };
 
 // A save in two steps (slice MP9, the network game's autosave): OwnSave_Prepare takes what must be read at the tick
 // (INFO with the state hash, the other chunks, the state's raw bytes); OwnSave_Finish packs the state (zlib) and joins
 // the file, and may run on another thread. OwnSave_Write(s, meta) is OwnSave_Finish(OwnSave_Prepare(s, meta)).
 struct OwnSavePending {
-    Bytes head;  // the magic, the format, the chunk count and the chunks before SIM
-    Bytes raw;   // the state, not packed yet
-    Bytes tail;  // the chunks after SIM
+    Bytes head;    // the magic, the format, the chunk count and the chunks before SIM
+    Bytes raw;     // the state, not packed yet
+    Bytes ground;  // the generated map (GRND), not packed yet; empty: none
+    Bytes tail;    // the chunks after SIM and GRND
 };
 OwnSavePending OwnSave_Prepare(const GameState& s, const OwnSaveMeta& meta);
 Bytes OwnSave_Finish(const OwnSavePending& p);

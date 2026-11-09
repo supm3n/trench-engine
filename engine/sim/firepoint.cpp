@@ -121,6 +121,7 @@ void Order_ApplyPoint(GameState& s, const Command& c) {
     if (rec.units.empty() && u != nullptr) rec.units.push_back(Unit_Ref(player, *u));
     s.orders.push_back(std::move(rec));
     if (u == nullptr || c.args.size() != 4 || u->is_deleted != 0) return;
+    u->order_queue.clear();  // ours (docs/bugs.md B317): a new order replaces the Shift-click queue
     TUnit_OrderPoint(s, player, *u, std::bit_cast<float>(c.args[1].raw), std::bit_cast<float>(c.args[2].raw),
                      static_cast<std::uint8_t>(c.args[3].raw & 0xff));
 }

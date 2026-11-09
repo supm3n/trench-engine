@@ -213,6 +213,85 @@ std::int32_t AI_Threat(const GameState& s, std::uint8_t p, std::int32_t x, std::
 namespace {
 
 void AI_NavalTransport(GameState& s, std::uint8_t p, std::uint8_t target);
+
+// ---- Water maps (docs/ai.md 10.17): who can reach whom by land. Classic uses it for boarding, Plus for its plans ----
+
+// The land mass (Land_Region) under a cell, else of the first of its eight neighbours on land; 0: none.
+std::uint16_t RegionAtCell(GameState& s, Cell c) {
+    std::uint16_t r = Land_Region(s, c.x, c.y);
+    for (std::uint8_t d = 1; d <= 8 && r == 0; ++d) {
+        const Cell q = Cell_Step(c, d);
+        r = Land_Region(s, q.x, q.y);
+    }
+    return r;
+}
+
+std::uint16_t RegionAt(GameState& s, float x, float y) { return RegionAtCell(s, WorldToCell(x, y)); }
+
+// The land mass of the player's base (the script's base cell); 0: unknown.
+std::uint16_t BaseRegion(GameState& s, std::uint8_t q) {
+    const Player& pl = s.players[q];
+    return pl.script ? RegionAtCell(s, Cell{pl.script->base_x, pl.script->base_y}) : 0;
+}
+
+// A unit that walks: alive, not aboard, neither ship nor aircraft.
+bool Walker(const GameState& s, std::uint8_t q, const Unit& u) {
+    const UnitType& ut = Unit_Type(s, q, u);
+    return u.is_deleted == 0 && !u.in_transport && ut.is_ship == 0 && ut.is_air == 0;
+}
+
+// An enemy house on the player's own land mass (an unknown base counts as reachable).
+bool LandEnemy(GameState& s, std::uint8_t p) {
+    const std::uint16_t rb = BaseRegion(s, p);
+    if (rb == 0) return true;
+    for (std::size_t q = 0; q < s.players.size(); ++q) {
+        const auto qq = static_cast<std::uint8_t>(q);
+        if (s.players[q].is_lost != 0 || !IsEnemy(s, p, qq)) continue;
+        for (const House& h : s.players[q].houses) {
+            if (h.is_destroyed == 0 && RegionAtCell(s, Cell{h.map_x, h.map_y}) == rb) return true;
+        }
+    }
+    return false;
+}
+
+// Every living enemy has a house or a walking unit on the player's own land mass; an enemy with neither anywhere does
+// not count (an unknown base counts as all reachable).
+bool AllByLand(GameState& s, std::uint8_t p) {
+    const std::uint16_t rb = BaseRegion(s, p);
+    if (rb == 0) return true;
+    for (std::size_t q = 0; q < s.players.size(); ++q) {
+        const auto qq = static_cast<std::uint8_t>(q);
+        const Player& e = s.players[q];
+        if (e.is_lost != 0 || !IsEnemy(s, p, qq)) continue;
+        bool any = false, near = false;
+        for (const House& h : e.houses) {
+            if (h.is_destroyed != 0) continue;
+            any = true;
+            near = RegionAtCell(s, Cell{h.map_x, h.map_y}) == rb;
+            if (near) break;
+        }
+        for (std::uint32_t k = e.first_unit; k != kNoSlot && !near; k = e.unit_slots[k].next) {
+            const Unit& u = e.unit_slots[k];
+            if (!Walker(s, qq, u)) continue;
+            any = true;
+            near = RegionAt(s, u.x, u.y) == rb;
+        }
+        if (any && !near) return false;
+    }
+    return true;
+}
+
+// Plus, saving for the port (set by AIScript_Run, docs/ai.md 10.17): while it lasts, Build takes only the economy's
+// houses and the training only units that cost at most 500 wood, iron, gold and oil together (soldiers, workers), so
+// the 75,000 of the port add up.
+bool SavingForPort(const GameState& s, std::uint8_t p) { return s.ai_saving_port == p; }
+
+bool DearUnit(const GameState& s, std::uint8_t p, std::uint16_t t) {
+    if (t >= 40) return false;
+    const auto& c = s.unit_types[s.players[p].nation][t].cost;
+    return c[1] + c[2] + c[3] + c[4] > 500.0f;
+}
+
 }  // namespace
 
 
@@ -377,6 +456,10 @@ void AI_Think(GameState& s, std::uint8_t p) {
                 AI_FormGroups(s, p, list, 1, 2, 3, 1, x, y, 0, 0, 1, true);
             }
             if (!all) return;
+        }
+        if (s.land_map == 0 && t.kind == 2) {  // Plus on a water map (docs/ai.md 10.17): no wave over the water
+            const std::uint16_t rb = BaseRegion(s, p);
+            if (rb != 0 && RegionAt(s, static_cast<float>(t.x), static_cast<float>(t.y)) != rb) return;
         }
         PlusArmy_Wave(s, p, t, all);
         return;
@@ -563,6 +646,7 @@ namespace {
 
 void TrainOne(GameState& s, std::uint8_t p, std::uint16_t t, std::uint16_t lim) {
     if (!TrainAllowed(s.players[p], t) || AI_MixFull(s, p, t) || AI_CannotFeed(s, p, t)) return;
+    if (DearUnit(s, p, t) && SavingForPort(s, p)) return;
     const std::uint16_t k = TrainHouse(s, p, t, lim);
     if (k != 0xffff && Player_PayForUnit(s, p, t, House_TrainNation(s, p, k))) House_Enqueue(s, p, k, t, false);
 }
@@ -571,6 +655,7 @@ void TrainOne(GameState& s, std::uint8_t p, std::uint16_t t, std::uint16_t lim) 
 
 void TrainMany(GameState& s, std::uint8_t p, std::uint16_t t, std::uint16_t lim, std::int32_t n) {
     if (!TrainAllowed(s.players[p], t) || AI_MixFull(s, p, t) || AI_CannotFeed(s, p, t)) return;
+    if (DearUnit(s, p, t) && SavingForPort(s, p)) return;
     const std::uint16_t k = TrainHouse(s, p, t, lim);
     if (k == 0xffff) return;
     const std::uint8_t nation = House_TrainNation(s, p, k);  // B263
@@ -585,7 +670,7 @@ void TrainFive(GameState& s, std::uint8_t p, std::uint16_t t, std::uint16_t lim)
 void OrderAt(GameState& s, std::uint8_t p, const House& h, std::uint16_t t, int n) {
     const std::uint8_t nation = s.players[p].nation;
     if (t >= NumUnitTypes(s, nation) || Producer(s, nation, t) != h.type || AI_MixFull(s, p, t) ||
-        AI_CannotFeed(s, p, t)) {
+        AI_CannotFeed(s, p, t) || (DearUnit(s, p, t) && SavingForPort(s, p))) {
         return;
     }
     const std::uint16_t num = h.num;
@@ -647,6 +732,11 @@ void AI_SendWorker(GameState& s, std::uint8_t p, Unit& u, std::uint16_t k) {
 
 bool Build(GameState& s, std::uint8_t p, std::uint16_t t) {
     if (s.players[p].field_9b2b38 == 0 || !CanBuild(s, p, t)) return false;
+    // Plus: while saving for the port only the power station, barracks, town centre, market, dwellings, mines,
+    // sawmill, oil rig, barn and the port itself.
+    constexpr std::uint32_t kEconomy = 1u << 0 | 1u << 4 | 1u << 6 | 1u << 8 | 1u << 9 | 1u << 10 | 1u << 11 |
+                                       1u << 12 | 1u << 13 | 1u << 15 | 1u << 0x16;
+    if (t < 32 && (kEconomy >> t & 1u) == 0 && SavingForPort(s, p)) return false;
     if (t == 0x18 && AI_CannotFeed(s, p, 0x17)) return false;  // Plus, stage 4: the fixed howitzer's gold upkeep
     Cell pt;
     if (!FindSite(s, p, t, &pt)) return false;
@@ -1054,6 +1144,7 @@ std::int32_t NthBuilt(const GameState& s, std::uint8_t p, std::uint16_t t, std::
 bool RepeatAt(GameState& s, std::uint8_t p, std::uint16_t t, std::uint16_t k) {
     // A3 (Plus): soldiers instead of mortar men at the share, or while their gold upkeep cannot be paid (stage 4)
     if (t == 5 && (AI_MixFull(s, p, t) || AI_CannotFeed(s, p, t))) t = 2;
+    if (DearUnit(s, p, t) && SavingForPort(s, p)) t = 2;     // Plus: soldiers while saving for the port
     const std::uint8_t nation = House_TrainNation(s, p, k);  // B263
     if (!Player_CanAfford(s, p, t, nation)) return false;
     Player_PayForUnit(s, p, t, nation);
@@ -1322,7 +1413,8 @@ void AIScript_Kind5(GameState& s, std::uint8_t p) {
     TrainOne(s, p, 0x13, 1);
     if (Rd(s) < d) TrainOne(s, p, 0x14, 2);
     TrainFive(s, p, 2, 10);
-    if (pl.unit_count[0x11] != 0) {
+    // Plus on a water map: with every enemy within walking reach the army grows as it does with a transport.
+    if (pl.unit_count[0x11] != 0 || (s.plus_rules && s.land_map == 0 && AllByLand(s, p))) {
         if (Rd(s) < d) TrainFive(s, p, 2, 10);
         if (Rd(s) < c) TrainFive(s, p, 5, 10);
         if (Rd(s) < c) TrainFive(s, p, 6, 10);
@@ -2107,6 +2199,16 @@ bool PortSiteSearch(GameState& s, std::uint8_t p, Cell* out) {
     return false;
 }
 
+// Plus: a site of the list where the player may place a port now (the list as it stands, nothing sorted).
+bool PortSiteFree(GameState& s, std::uint8_t p) {
+    for (const std::uint32_t site : s.port_sites) {
+        if (CanPlaceHouse(s, p, static_cast<std::int32_t>(site & 0xffff), static_cast<std::int32_t>(site >> 16), 0x16,
+                          0))
+            return true;
+    }
+    return false;
+}
+
 
 bool Unit_IsFree(const GameState& s, std::uint8_t p, const Unit& u) {
     return u.work == 0xff && !u.in_group && u.player_unit_attack == 0xff && u.player_house_attack == 0xff &&
@@ -2133,12 +2235,27 @@ bool Transport_PickLanding(GameState& s, std::uint8_t q, Unit& t) {
     return true;
 }
 
+// Plus (docs/ai.md 10.17): the visits of state 2 a transport with 250 to 499 aboard waits before it sails. The visits
+// come at the planner's cadence (every 100, 66 or 33 ticks for Easy, Medium, Difficult), so the wait is about 4,500,
+// 3,000 or 1,500 ticks: several times the 750 ticks a soldier (speed 4) needs to walk the 3,000 px of a call, short
+// against the 18,500 ticks a transport stood with 363 aboard.
+constexpr std::uint8_t kWaitVisits = 45;
 
 
+
+// then after six tries back to state 0.
+// Ours, Classic and Plus (docs/ai.md 10.17): Board says yes even for a unit that cannot get aboard, so a crowd out of
+// reach kept the "nobody came" count at 0 and a transport with 250 to 499 aboard never sailed. Only units on the land
+// mass of the boarding point are called and counted (nobody while the ship has no boarding point). Plus: the calls
 
 void Transport_CallUnits(GameState& s, std::uint8_t p, Unit& t) {
     if (t.passengers.size() > 499) return;
     Player& pl = s.players[p];
+    std::uint16_t reg = 0;
+    if (!s.original_rules) {
+        float bx = 0, by = 0;
+        if (BoardPointShip(s, t, bx, by, 0xff, nullptr)) reg = RegionAt(s, bx, by);
+    }
     std::uint32_t n = 0;
     for (std::uint32_t k = pl.first_unit; k != kNoSlot; k = pl.unit_slots[k].next) {
         Unit& v = pl.unit_slots[k];
@@ -2146,15 +2263,56 @@ void Transport_CallUnits(GameState& s, std::uint8_t p, Unit& t) {
         if (vt.field_00b == 0 || vt.move_class == 6 || !Unit_IsFree(s, p, v)) continue;
         const double dy = static_cast<double>(t.y) - v.y, dx = static_cast<double>(t.x) - v.x;
         if (!(std::sqrt(dy * dy + dx * dx) < 3000.0)) continue;
+        if (!s.original_rules && (reg == 0 || RegionAt(s, v.x, v.y) != reg)) continue;
         if (Transport_Board(s, p, v, p, t, false)) ++n;
     }
     if (n == 0) {
 
         if (pl.control_type == 1 || pl.field_9b2d9c != 0) Farm_SetRally(s, p, 4, t.x, t.y, true);
+        if (s.plus_rules) {
+            if (t.passengers.empty() && t.field_0e8 >= 2 * kWaitVisits) t.field_0e4 = 0, t.field_0e8 = 0;
+            return;
+        }
         if (++t.field_0e8 < 6) return;
         t.field_0e4 = 0;
     }
+    if (s.plus_rules) return;
     t.field_0e8 = 0;
+}
+
+// Plus: the enemy whose base's land mass holds the most of our walking units (at least kHold) and the coast point of
+// its script nearest to one of them; false when no landing holds.
+bool Beachhead(GameState& s, std::uint8_t p, Unit& t, std::uint8_t& target) {
+    constexpr std::uint32_t kHold = 20;
+    const Player& pl = s.players[p];
+    std::uint32_t most = 0;
+    std::uint16_t reg = 0;
+    for (std::size_t q = 0; q < s.players.size(); ++q) {
+        const auto qq = static_cast<std::uint8_t>(q);
+        if (s.players[q].is_lost != 0 || !IsEnemy(s, p, qq) || !s.players[q].script) continue;
+        const std::uint16_t r = BaseRegion(s, qq);
+        if (r == 0 || r == BaseRegion(s, p)) continue;
+        std::uint32_t n = 0;
+        for (std::uint32_t k = pl.first_unit; k != kNoSlot; k = pl.unit_slots[k].next) {
+            const Unit& u = pl.unit_slots[k];
+            n += Walker(s, p, u) && RegionAt(s, u.x, u.y) == r ? 1 : 0;
+        }
+        if (n >= kHold && n > most) most = n, reg = r, target = qq;
+    }
+    if (most == 0) return false;
+    const std::vector<std::uint64_t>& pts = s.players[target].script->items;
+    double best = 1e18;
+    for (std::uint32_t k = pl.first_unit; k != kNoSlot; k = pl.unit_slots[k].next) {
+        const Unit& u = pl.unit_slots[k];
+        if (!Walker(s, p, u) || RegionAt(s, u.x, u.y) != reg) continue;
+        for (const std::uint64_t pt : pts) {
+            const auto x = static_cast<float>(static_cast<std::int32_t>(static_cast<std::uint32_t>(pt)));
+            const auto y = static_cast<float>(static_cast<std::int32_t>(pt >> 32));
+            const double dx = static_cast<double>(x) - u.x, dy = static_cast<double>(y) - u.y;
+            if (dx * dx + dy * dy < best) best = dx * dx + dy * dy, t.field_16c = x, t.field_170 = y;
+        }
+    }
+    return best < 1e18;
 }
 
 
@@ -2195,6 +2353,25 @@ void Transport_Think(GameState& s, std::uint8_t p, Unit& t, std::uint8_t target)
             t.field_07c = 0;
             return;
         case 2:
+            if (s.plus_rules) {
+
+
+                if (t.field_0e8 < 0xff) ++t.field_0e8;
+                const std::size_t n = t.passengers.size();
+                if (n >= 500 || (n > 0xf9 && t.field_0e8 >= kWaitVisits)) {
+                    std::uint8_t q = target;
+                    if (Beachhead(s, p, t, q) || Transport_PickLanding(s, q, t)) {
+                        t.field_0e9 = q;
+                        t.field_0e8 = 0;
+                        TUnit_OrderMove(s, p, t, t.field_16c, t.field_170, 1);
+                        t.field_07c = 0;
+                        t.field_0e4 = 3;
+                        return;
+                    }
+                }
+                if (Rd(s) % 3 == 1) Transport_CallUnits(s, p, t);
+                return;
+            }
             if (t.passengers.size() > 0xf9 && (t.passengers.size() == 500 || t.field_0e8 != 0)) {
                 if (Transport_PickLanding(s, target, t)) {
                     t.field_0e9 = target;
@@ -2226,6 +2403,7 @@ void Transport_Think(GameState& s, std::uint8_t p, Unit& t, std::uint8_t target)
             if (++t.field_0e8 > 5) {
                 t.field_07c = 0;
                 t.field_0e4 = 2;
+                if (s.plus_rules) t.field_0e8 = kWaitVisits;  // Plus: sails again at the next visit
                 return;
             }
             TUnit_OrderMove(s, p, t, t.field_16c, t.field_170, 1);
@@ -2261,6 +2439,7 @@ void AI_NavalTransport(GameState& s, std::uint8_t p, std::uint8_t target) {
         const UnitRef r = s.ships[i];
         Unit* t = r.player == p ? Unit_Find(s, r) : nullptr;
         if (t == nullptr || t->type != 0x11 || t->is_deleted != 0 || t->field_154 != 0 || t->field_142 != 0) continue;
+        if (t->work == 0xe && !s.original_rules) continue;  // ours: not while it is still in its port (being built)
         const float dx = t->x - t->final_x, dy = t->y - t->final_y;
         if (std::sqrt(dx * dx + dy * dy) <= 50.0f) Transport_Think(s, p, *t, target);
     }
@@ -2383,7 +2562,21 @@ void AIScript_Run(GameState& s, std::uint8_t p) {
     if (pl.ai_kind == 5) {
         const std::uint16_t n = Count16(s, p, 0x16);
         const std::int32_t r = static_cast<std::int32_t>(Rd(s)) % 10;
-        if ((r == 1 || n < 1) && n < 3) Build(s, p, 0x16);
+        const bool plus_sea = s.plus_rules && s.land_map == 0;  // Plus on a water map (docs/ai.md 10.17)
+        if (plus_sea && n == 0 && !LandEnemy(s, p) && PortSiteFree(s, p)) {
+            // No enemy to walk to and a free port site: the market helps, the power station comes first, and a
+            // computer at Medium or Difficult saves for the port until tick 60,000 (a later port is no longer early).
+            if (pl.control_type == 1 && pl.ai_level >= 2 && s.tick < 60000) s.ai_saving_port = p;
+            BuildOrBuy(s, p, 0x16);
+        } else if (plus_sea && AllByLand(s, p)) {
+            // Every enemy can be walked to: one port only late and with money to spare (twice its cost in stock).
+            if (n == 0 && s.tick >= 60000 && pl.wood >= 40000.0 && pl.iron >= 40000.0 && pl.gold >= 20000.0 &&
+                pl.oil >= 40000.0) {
+                Build(s, p, 0x16);
+            }
+        } else if ((r == 1 || n < 1) && n < 3) {
+            Build(s, p, 0x16);
+        }
     } else if (pl.ai_kind == 0) {
         return;
     }
@@ -2407,9 +2600,11 @@ void AIScript_Run(GameState& s, std::uint8_t p) {
             if (Count16(s, p, t) < sc.want_h[t] && CanBuild(s, p, t) && Build(s, p, t)) break;
         }
     }
-    TryResearch(s, p);
+    const bool saving = SavingForPort(s, p);  // Plus: no research and no towers while saving for the port
+    if (!saving) TryResearch(s, p);
     AIScript_Update(s, p);
-    Tail(s, p);
+    if (!saving) Tail(s, p);
+    s.ai_saving_port = 0xff;
 }
 
 

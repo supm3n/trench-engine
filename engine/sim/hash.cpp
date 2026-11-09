@@ -468,6 +468,28 @@ std::uint64_t Hash(const GameState& s, bool net) {
             }
         }
     }
+    // The Shift-click order queues (our rules, docs/bugs.md B317), only when one is set: the original's rules never
+    // queue, so their games hash as before (no version change). Per player its units in list order.
+    std::uint32_t queued = 0;
+    for (const Player& p : s.players) {
+        for (std::uint32_t k = p.first_unit; k != kNoSlot; k = p.unit_slots[k].next)
+            queued += !p.unit_slots[k].order_queue.empty();
+    }
+    if (queued != 0) {
+        h.u32(queued);
+        for (std::size_t q = 0; q < s.players.size(); ++q) {
+            const Player& p = s.players[q];
+            for (std::uint32_t k = p.first_unit; k != kNoSlot; k = p.unit_slots[k].next) {
+                const Unit& u = p.unit_slots[k];
+                if (u.order_queue.empty()) continue;
+                h.u8(static_cast<std::uint8_t>(q)), h.u16(u.id), h.count(u.order_queue.size());
+                for (const Unit::QueuedOrder& e : u.order_queue) {
+                    h.u8(e.kind), h.f32(e.x), h.f32(e.y), h.i32(e.px), h.i32(e.py), h.ref(e.unit);
+                    h.u8(e.house.player), h.u16(e.house.slot), h.u32(e.house.generation);
+                }
+            }
+        }
+    }
     return h.h;
 }
 

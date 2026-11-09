@@ -9,8 +9,10 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <vector>
 
 #include "dmath.hpp"
+#include "mapgen.hpp"
 #include "movement.hpp"
 
 namespace antanta::sim {
@@ -175,6 +177,49 @@ void SkirmishSetup_CompNames(SkirmishSetup* setup, const std::map<std::string, s
     }
 }
 
+namespace {
+
+// Generated maps (docs/map-generator-plan.md 4.4; the owner took the recommendation, to confirm): teammates on
+// neighbouring positions, which the generator numbers around its ring. After the shuffle's draws (the same draws as
+// always), the slots are regrouped in the order of their drawn positions, each team's members together where its
+// first member was drawn. Teams 1..8 count; without two slots of one team nothing changes. On an Islands map
+// (decision 53) the teams go largest first (a player without a team counts as a team of one, ties in drawn order), as
+// the generator numbers its islands largest first and the setup screen writes the team sizes into the code.
+void TeamsSideBySide(std::array<std::uint8_t, 8>& perm, std::size_t count, const std::array<std::uint8_t, 8>& team,
+                     bool by_size) {
+    auto real = [&team](std::size_t i) { return team[i] >= 1 && team[i] <= 8; };
+    bool any = false;
+    for (std::size_t i = 0; i < count; ++i) {
+        for (std::size_t j = 0; j < i; ++j) any = any || (real(i) && team[i] == team[j]);
+    }
+    if (!any) return;
+    std::array<std::uint8_t, 8> by_pos{};
+    for (std::size_t i = 0; i < count; ++i) by_pos[perm[i]] = static_cast<std::uint8_t>(i);
+    std::array<bool, 8> done{};
+    std::vector<std::vector<std::uint8_t>> groups;  // the slots of each team, in the order of their drawn positions
+    for (std::size_t p = 0; p < count; ++p) {
+        const std::uint8_t i = by_pos[p];
+        if (done[i]) continue;
+        done[i] = true;
+        groups.push_back({i});
+        if (!real(i)) continue;
+        for (std::size_t q = p + 1; q < count; ++q) {
+            const std::uint8_t j = by_pos[q];
+            if (!done[j] && team[j] == team[i]) done[j] = true, groups.back().push_back(j);
+        }
+    }
+    if (by_size) {
+        std::stable_sort(groups.begin(), groups.end(),
+                         [](const auto& a, const auto& b) { return a.size() > b.size(); });
+    }
+    std::uint8_t next = 0;
+    for (const auto& gr : groups) {
+        for (std::uint8_t i : gr) perm[i] = next++;
+    }
+}
+
+}  // namespace
+
 std::array<std::uint8_t, 8> SkirmishSetup_SlotPlayers(const SkirmishSetup& setup, std::size_t positions) {
     std::array<std::uint8_t, 8> out;
     out.fill(0xff);
@@ -203,6 +248,12 @@ std::array<std::uint8_t, 8> SkirmishSetup_SlotPlayers(const SkirmishSetup& setup
             for (std::size_t k = 0; k < i; ++k) used = used || perm[k] == perm[i];
             if (!used) break;
         }
+    }
+    if (const auto gen = MapGen_ParseCode(setup.map, nullptr)) {
+        std::array<std::uint8_t, 8> team;
+        team.fill(0xff);
+        for (std::size_t i = 0; i < open; ++i) team[i] = setup.slots[game_slot[i]].team;
+        TeamsSideBySide(perm, positions, team, gen->islands);
     }
     for (std::size_t i = 0; i < open; ++i) out[game_slot[i]] = perm[i];
     return out;
@@ -249,9 +300,12 @@ bool NewGame_LoadMap(GameState& s, const MapData& map, const std::string& name, 
     const std::size_t n = static_cast<std::size_t>(map.width) * static_cast<std::size_t>(map.height);
 
 
+
     s.climate =
         (!name.empty() && (name[0] == 'w' || name[0] == 'W')) || name == "random1r.dat" || name == "random2r.dat" ? 3
                                                                                                                   : 1;
+    const auto gen = MapGen_ParseCode(name, nullptr);
+    if (gen) s.climate = gen->winter ? 3 : 1;
     bool land_map = true;
 
     // The cells: an object's high bit sets the cell flag. Every deposit 0x2581..0x2583 is written to the mine site
@@ -381,12 +435,15 @@ bool NewGame_LoadMap(GameState& s, const MapData& map, const std::string& name, 
     }
 
 
+
+
     m.obstacle = map.obstacle_grid;
     {
         std::int32_t blocked = 0;
         for (std::uint16_t v : m.obstacle) blocked += v != 0 && static_cast<std::int16_t>(v) >= 0 ? 1 : 0;
         if (static_cast<std::int32_t>(m.obstacle.size()) / 3 < blocked) land_map = false;
     }
+    if (gen) land_map = !gen->sea;
     s.land_map = land_map ? 1 : 0;
     CoarseWater_Init(s);
     for (const MapHouse& h : map.neutral_houses) NeutralHouse_Place(s, h.type, h.cell_x, h.cell_y);
@@ -533,8 +590,10 @@ std::optional<GameState> GameState_NewSkirmish(const SkirmishSetup& setup, const
                 for (std::size_t k = 0; k < i; ++k) used = used || perm[k] == perm[i];
                 if (!used) break;
             }
-            if (i == me) s.my_player = perm[i];
         }
+        if (const auto gen = MapGen_ParseCode(setup.map, nullptr))
+            TeamsSideBySide(perm, count, slot.team, gen->islands);
+        if (me < count) s.my_player = perm[me];
         for (std::size_t i = 0; i < count; ++i) {
             const std::uint8_t p = perm[i];
             pos.nation[p] = slot.nation[i] > 5 ? 0 : slot.nation[i];

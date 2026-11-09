@@ -52,6 +52,23 @@ skirmish.rules = Rules
 skirmish.rules_classic = Entente Engine
 skirmish.rules_plus = Entente Engine Plus
 skirmish.rules_plus_tip = Entente Engine Plus: reworked rules for skirmishes (research that does what its text says, fairer costs and more). Missions and campaigns always use Entente Engine.
+# The generated map's choices on the setup screen (slice G7, docs/map-generator-plan.md 4): yes/no switches, the size,
+# the New map button, the start positions' numbers on the preview, and why a map cannot start
+skirmish.gen_title = Generated map
+skirmish.gen_winter = Winter
+skirmish.gen_sea = Sea
+skirmish.gen_islands = Islands
+skirmish.gen_mountains = Mountains
+skirmish.gen_forest = Dense forest
+skirmish.gen_normal = Normal size
+skirmish.gen_large = Large size
+skirmish.gen_new = New map
+skirmish.gen_copy = Copy
+skirmish.gen_bad_code = This is not a map code.
+skirmish.gen_no_map = No map can be made from this code. Press New map.
+skirmish.gen_copied = Map code copied.
+skirmish.gen_islands_drawn = Teams too uneven for islands. Islands drawn as without teams.
+skirmish.gen_generating = Generating map ...
 
 # Entente Engine Plus: the tooltips of the Military Academy's research whose effect there is not the game's text (the
 # number is the research id, ui/house_panel.hpp kPlusResearchTexts; docs/plus-balance.md F1)
@@ -164,6 +181,7 @@ net.saved_rejoin = Join hosts it again on this PC; the others\njoin you and come
 net.address = Address: {address}
 net.details_on_join = The game's details come when you join.
 net.map = Map: {map}
+net.map_generated = Map: generated, {code}
 net.rules = Rules: {rules}
 net.players_of = Players: {n} of {max}
 net.password_needed = A password is needed.
@@ -189,14 +207,16 @@ net.all_in_host = Everyone is in. Press Start.
 net.all_in = Everyone is in. The host starts the game.
 net.seat_help = Click an open seat: the computer plays it. Click a player to move him.
 net.seat_move = Click an open seat to move {name} there.
-net.join_at = Others join at {address}, port {port}.
+net.join_at = Same network: others join at {address}, port {port}.
+net.join_internet = Over the internet they need your public address.
+net.join_ipv6 = Over the internet (IPv6): {address}, port {port}.
 net.this_pc = this PC's address
 net.has_password = The game has a password.
 net.host_failed = The game could not be hosted: {reason}
 net.join_failed = The game could not be joined: {reason}
 net.joining = Joining {address} ...
 net.ended = The network game ended: {reason}
-net.no_answer = No game answered at {address}. Check that the host has the game open and that Windows Firewall allows Entente Engine.
+net.no_answer = No game answered at {address}. Check that the host has the game open and that Windows Firewall allows Entente Engine on the host's PC. Over the internet the host's router must also forward TCP port 47625 (or the port the host chose) to that PC, and some internet lines cannot host at all.
 
 # The update check (the menu's "Check for updates") and the box that tells of a newer version: the updater
 # (docs/download.md "The updater") and the public build's Releases notice (platform/release_check.hpp)
@@ -218,8 +238,9 @@ start.failed = Entente Engine could not start.\n\nThe reason is written in the n
 # Reasons: sentences that the parts without a language (the updater, the network server and client, the game's
 # loading) give as English text; the display maps them back to these keys (ui/lang.hpp lang_reverse). A reason that is
 # not here (a technical detail: a file's damage, an error number) stays English, as the logs do.
-reason.net_protocol = protocol version {theirs}, the server has {ours}
-reason.net_build = build {theirs}, the server has {ours}
+reason.net_protocol = the game versions differ: everyone needs the same version of Entente Engine (protocol {theirs}, the server's {ours})
+reason.net_build = the game versions differ: everyone needs the same version of Entente Engine (yours {theirs}, the server's {ours})
+reason.net_map_code = map code {code}: {reason}
 reason.net_in_game = already in a game
 reason.net_server_full = the server holds no more games
 reason.net_no_position = a human slot the map has no position for
@@ -229,7 +250,7 @@ reason.net_not_net_save_why = not a network game's save: {reason}
 reason.net_seats_differ = the save's seats differ
 reason.net_host_slot = the host's slot is not a human slot
 reason.net_no_game = no such open game
-reason.net_files_differ = your game files differ from the host's
+reason.net_files_differ = your game files (the Data folder) differ from the host's
 reason.net_wrong_password = wrong password
 reason.net_no_free_slot = no free player slot
 reason.net_no_seat = no such seat to come back to

@@ -4,11 +4,15 @@
 
 #include <algorithm>
 #include <array>
+#include <condition_variable>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <deque>
 #include <map>
+#include <memory>
+#include <mutex>
+#include <thread>
 #include <tuple>
 #include <utility>
 
@@ -97,6 +101,12 @@ enum class Action {
     SkNext,
     SkStart,
     SkBack,
+    // ours, slice G7: the generated map's choices (docs/map-generator-plan.md 4)
+    SkGenSwitch,  // a yes/no switch (the widget's `row`: its GenSwitch)
+    SkGenSize,    // the size, Normal or Large
+    SkGenNew,     // New map: a new seed
+    SkGenCode,    // the map code field (typed, pasted)
+    SkGenCopy,    // Copy: the map code to the clipboard
     // The museum (frontend.md 4.16)
     MuseumBack,
     MuseumNext,
@@ -188,7 +198,10 @@ enum class Role {
     NetAddress,    // slice MP2: page 1's fields, page 2's password and lines (`row`)
     NetPort,
     NetPassword,
-    NetInfo
+    NetInfo,
+    Gen,        // ours, slice G7: a widget of the generated map's choices (shown while it is chosen)
+    GenMark,    // a start position's number on its preview (`row`: the position)
+    GenStatus,  // why the generated map cannot start (a bad code, no valid map)
 };
 
 // One widget of a window. Coordinates are in the window. Which fields a kind uses is said at each.
@@ -230,6 +243,7 @@ struct Widget {
     bool focused = false;
     std::size_t max_chars = 0;
     std::uint64_t focus_ms = 0;
+    bool selected = false;  // ours: the whole text selected (the map code field), replaced by what is typed next
 
     int ox = 0, oy = 0;
 
@@ -326,6 +340,27 @@ struct Window {
     WindowDrag drag;
 };
 
+// Ours: the generated map's preview is built on a thread of its own (a big Sea map takes seconds), so the menu keeps
+// running. Only the newest ask counts: an ask made while a build runs waits for it and replaces any older waiting
+// ask, and a build keeps its result only while no newer ask came (`asked`, the generation counter), so a stale map
+// never shows. The build thread shares the slot, so it may outlive the front-end.
+struct GenResult {
+    bool ok = false;
+    std::string error;
+    Minimap preview;
+    std::vector<std::array<int, 2>> marks;  // the starts on the preview (its pixels, 0..199)
+    double ms = 0;
+};
+
+struct GenJob {
+    std::mutex m;
+    std::condition_variable built;
+    std::uint64_t asked = 0;                                             // the newest ask
+    std::optional<std::pair<sim::MapGenSettings, MinimapPalette>> next;  // an ask the thread has not started
+    bool running = false;                                                // a build thread runs
+    std::optional<GenResult> done;                                       // the newest ask's result
+};
+
 }  // namespace
 
 struct Frontend {
@@ -366,6 +401,23 @@ struct Frontend {
     bool maps_read = false;
     SkirmishScreen sk;  // the skirmish screen's table
     bool plus = false;  // ours: the rule set chosen last on the skirmish screen (Settings::rules_plus)
+    // ours, slice G7: the generated map's choices made last (the next opening of the screen starts from them), the
+    // minimap colours of its preview, the code built for the preview last, whether it made a map and whether the code
+    // field holds a code
+    std::optional<sim::MapGenSettings> gen_last;
+    std::optional<MinimapPalette> gen_pal;
+    std::string gen_built;
+    bool gen_ok = false, gen_typed_ok = true;
+    std::uint64_t gen_copied_ms = 0;  // "Copied" shows in the generated map's status until this time
+    // ours: the preview's build (GenJob); gen_pending while the build of gen_built has not been shown yet
+    std::shared_ptr<GenJob> gen_job = std::make_shared<GenJob>();
+    bool gen_pending = false;
+    // ours, slice G8: the network pages' preview of a generated map (the lobby, the games page): the code built last
+    // and its picture (none: the code makes no map here), so a lobby shown again does not build the map again
+    std::string net_gen_code;
+    std::optional<Minimap> net_gen_preview;
+    std::shared_ptr<GenJob> net_gen_job = std::make_shared<GenJob>();  // ours: built as the setup screen's (GenJob)
+    bool net_gen_pending = false;                                      // net_gen_code's build not taken yet
     // the museum (4.16): the file with the names and texts of the text table, what is shown, and Pictures.les (41 MB,
     // kept while the museum is open)
     MuseumFile museum;
@@ -2306,19 +2358,32 @@ void load_preview(Frontend& f, Widget& image, const std::string& map_file) {
     set_minimap_picture(f, image, *mm, map_file);
 }
 
+// Ours, slice G7 (docs/map-generator-plan.md 4.3): where the preview of a generated map goes, at the top of the map
+// frame (668, 359, 290 x 293) with the choices below it.
+constexpr int kGenPreviewX = 729, kGenPreviewY = 382, kGenPreviewSide = 166;
+
+void gen_refresh(Frontend& f, Window& win, bool set_field, bool wait = false);  // below
+
+
 
 
 void show_map(Frontend& f, Window& win) {
-    const MapEntry* m = map_at(f.maps, f.sk.players, f.sk.map);
+    const bool generated = skirmish_generated(f.sk);
+    const MapEntry* m = skirmish_map_file(f.maps, f.sk, f.sk.map);
     if (Widget* image = find_role(win, Role::Preview)) {
         image->pic = Picture{};
-        if (m) load_preview(f, *image, m->file);
+        if (generated) {
+            image->x = kGenPreviewX, image->y = kGenPreviewY, image->w = image->h = kGenPreviewSide;
+        } else {
+            image->x = 668, image->y = 359, image->w = 290, image->h = 293;
+            if (m) load_preview(f, *image, m->file);
+        }
     }
-    if (Widget* start = find_role(win, Role::Start)) start->visible = start->enabled = m != nullptr;
+    if (generated) f.gen_built.clear();  // the picture was dropped: build it again
+    if (Widget* start = find_role(win, Role::Start)) start->visible = start->enabled = m != nullptr || generated;
     if (Widget* prev = find_role(win, Role::Prev)) prev->enabled = f.sk.map > 0;
-    if (Widget* next = find_role(win, Role::Next)) {
-        next->enabled = map_at(f.maps, f.sk.players, f.sk.map + 1) != nullptr;
-    }
+    if (Widget* next = find_role(win, Role::Next)) next->enabled = skirmish_has_entry(f.maps, f.sk, f.sk.map + 1);
+    gen_refresh(f, win, true);
 }
 
 
@@ -2335,7 +2400,7 @@ void sync_skirmish(Frontend& f, Window& win) {
             w.sel = f.sk.plus ? 1 : 0;
             combo_close(w);
         }
-        if (w.row < 0) continue;
+        if (w.row < 0 || w.role == Role::Gen || w.role == Role::GenMark) continue;  // ours: not a player's row
         const sim::SkirmishSlot& r = f.sk.rows[w.row];
         const bool shown = w.row < f.sk.players;
         const bool opened = shown && r.level != 0;
@@ -2384,6 +2449,274 @@ std::vector<std::string> strings_numbered(const Frontend& f, const std::string& 
 
 constexpr std::uint32_t kNetSpeeds[] = {30, 45, 60, 90};  // slice MP2: the host's game speeds (ms per tick)
 
+// Ours, slice G7 (docs/map-generator-plan.md 4.1, docs/decisions.md 50): the generated map's choices in the map frame
+// under its preview, plain yes/no switches and no sliders: Winter, Mountains, Sea, Islands, Dense forest (check boxes
+// of Game options), the size (Normal or Large, a press shows the other), New map (a new seed), the map code (typed or
+// pasted with Ctrl+V, copied with Ctrl+C; a click or Ctrl+A selects it all) and Copy. Over the preview: the start
+// positions' numbers, and why the map cannot start or that the code was copied. All are Role::Gen and shown only
+// while the generated map is chosen.
+bool add_generated_choices(Frontend& f, Window& win, std::string* error) {
+    auto go = open_archive(f, "Data/Interface/Menu/GameOptions.les", error);
+    if (!go) return false;
+    auto field = [&] { return load_picture(f, *go, "SliderBack.bmp", true, error); };
+    auto gen = [](Widget&& w) {
+        w.role = Role::Gen;
+        return std::move(w);
+    };
+    Widget title = make_plain_label(f, ours(f, "skirmish.gen_title"), 673, 362, kCream);  // over the preview
+    title.w = 280, title.centred = true;
+    fit_label(f, title, "skirmish.gen_title");
+    win.widgets.push_back(gen(std::move(title)));
+    // In GenSwitch order; the places in three rows of two: Winter and Mountains, Sea and Islands, Dense forest.
+    const char* keys[kGenSwitches] = {"skirmish.gen_winter", "skirmish.gen_sea", "skirmish.gen_islands",
+                                      "skirmish.gen_mountains", "skirmish.gen_forest"};
+    const int place[kGenSwitches][2] = {{0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 2}};
+    for (int k = 0; k < kGenSwitches; ++k) {
+        auto box = load_picture(f, *go, "CheckBox.bmp", true, error);
+        if (!box) return false;
+        const int x = place[k][0] == 0 ? 678 : 818, y = 550 + 25 * place[k][1];
+        Widget c = make_check(std::move(*box), x, y, false, Action::SkGenSwitch);
+        c.row = k;
+        const int cw = c.w;
+        win.widgets.push_back(gen(std::move(c)));
+        Widget label = make_plain_label(f, ours(f, keys[k]), x + cw + 6, y + 3, kCream);
+        fit_label(f, label, "skirmish.gen_switch");
+        win.widgets.push_back(gen(std::move(label)));
+    }
+    auto choice = [&](int x, int y, int w, std::vector<std::string> values, Action action) {
+        auto pic = field();
+        if (!pic) return false;
+        Widget c;
+        c.kind = Kind::Choice;
+        c.action = action;
+        c.x = x, c.y = y, c.w = w, c.h = 22;
+        c.pic = std::move(*pic);
+        for (const std::string& v : values) c.item_text.push_back(make_text_object(f, v, kCream));
+        c.strs = std::move(values);
+        fit_items(f, c, "skirmish.gen_value", f.font18);
+        win.widgets.push_back(gen(std::move(c)));
+        return true;
+    };
+    // Dense forest's row ends with the size; New map and Copy over the code, which has the frame's whole width.
+    if (!choice(818, 603, 132, {ours(f, "skirmish.gen_normal"), ours(f, "skirmish.gen_large")}, Action::SkGenSize) ||
+        !choice(678, 628, 130, {ours(f, "skirmish.gen_new")}, Action::SkGenNew) ||
+        !choice(818, 628, 132, {ours(f, "skirmish.gen_copy")}, Action::SkGenCopy)) {
+        return false;
+    }
+    auto code_back = field();
+    if (!code_back) return false;
+    Widget back = picture_at(std::move(*code_back), 678, 653);
+    back.w = 272, back.h = 22;
+    win.widgets.push_back(gen(std::move(back)));
+    Widget code = make_edit(f, 678, 653, 272, 22, 8, 2, 32, std::string());
+    code.action = Action::SkGenCode;
+    win.widgets.push_back(gen(std::move(code)));
+    for (int k = 0; k < 8; ++k) {  // the start positions' numbers, placed by gen_refresh
+        Widget mark = make_plain_label(f, data(f, std::to_string(k + 1)), 0, 0, SDL_Color{0xff, 0xff, 0xff, 0xff});
+        mark.role = Role::GenMark, mark.row = k, mark.centred = true, mark.w = 16, mark.h = 14, mark.visible = false;
+        win.widgets.push_back(std::move(mark));
+    }
+    Widget status = make_plain_label(f, std::string(), kGenPreviewX, kGenPreviewY + kGenPreviewSide / 2 - 20, kCream);
+    status.role = Role::GenStatus, status.visible = false;
+    win.widgets.push_back(std::move(status));
+    return true;
+}
+
+// The minimap colours of the generated map's preview (LandTextures.dat, read once); none: black ground.
+const MinimapPalette& gen_palette(Frontend& f) {
+    if (!f.gen_pal) {
+        std::string err;
+        if (auto file = f.files("Data/LandTextures/LandTextures.dat", &err)) {
+            f.gen_pal = minimap_ground_palette(*file);
+        } else {
+            SDL_Log("front-end: the generated map's preview has no colours: %s", err.c_str());
+            f.gen_pal.emplace();
+        }
+    }
+    return *f.gen_pal;
+}
+
+// The map of one ask and its preview (any thread: the generator and map_preview keep no state between calls).
+GenResult gen_build(const sim::MapGenSettings& g, const MinimapPalette& pal) {
+    GenResult r;
+    sim::MapGenReport report;
+    const std::uint64_t t0 = SDL_GetTicksNS();
+    const std::optional<MapData> map = sim::MapGen_Build(g, &r.error, &report);
+    r.ok = map.has_value();
+    if (map) {
+        r.preview = map_preview(*map, pal);
+        for (const sim::MapGenZone& z : report.layout.zones) {  // a cell is 96 x 24 world pixels
+            r.marks.push_back({z.x * Minimap::kSide / std::max(1, map->width * 96),
+                               z.y * Minimap::kSide / std::max(1, map->height * 24)});
+        }
+    }
+    r.ms = static_cast<double>(SDL_GetTicksNS() - t0) / 1e6;
+    return r;
+}
+
+#if !defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)
+// The build thread: the waiting ask, until none waits.
+void gen_thread(std::shared_ptr<GenJob> job) {
+    std::unique_lock lock(job->m);
+    while (job->next) {
+        const auto [g, pal] = std::move(*job->next);
+        job->next.reset();
+        const std::uint64_t ask = job->asked;
+        lock.unlock();
+        GenResult r = gen_build(g, pal);
+        lock.lock();
+        if (ask == job->asked) {  // else a newer ask came: dropped
+            job->done = std::move(r);
+            job->built.notify_all();
+        }
+    }
+    job->running = false;
+}
+#endif
+
+// A new ask to `job` (the setup screen's or the network pages'): the older one's result is dropped. On the one-thread
+// web page (no pthreads) the map is built here.
+void gen_ask(Frontend& f, const std::shared_ptr<GenJob>& job, const sim::MapGenSettings& g) {
+    const MinimapPalette& pal = gen_palette(f);
+    GenJob& j = *job;
+    std::lock_guard lock(j.m);
+    ++j.asked;
+    j.done.reset();
+#if !defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)
+    j.next.emplace(g, pal);
+    if (!j.running) {
+        j.running = true;
+        std::thread(gen_thread, job).detach();
+    }
+#else
+    j.done = gen_build(g, pal);
+#endif
+}
+
+// The newest ask's result once built (`wait`: waits for it), else nothing. Only while an ask is not taken yet.
+std::optional<GenResult> gen_take(GenJob& j, bool wait) {
+    std::unique_lock lock(j.m);
+    if (wait) j.built.wait(lock, [&j] { return j.done.has_value(); });
+    std::optional<GenResult> r = std::move(j.done);
+    j.done.reset();
+    return r;
+}
+
+// Ours, slice G7: the generated map's part of the screen follows f.sk.gen: the switches, the size, the code field
+// (`set_field`; not while the player types in it), the preview built from the map with the start positions numbered
+// (docs/map-generator-plan.md 4.3), Start on while the code makes a map. A code already built is not built again.
+// The map is built on a thread (gen_ask): "Generating map" shows until a later call finds it built (`wait`: waits
+// for it, for Start and the batch screenshots).
+void gen_refresh(Frontend& f, Window& win, bool set_field, bool wait) {
+    const bool on = skirmish_generated(f.sk);
+    const std::string code = on ? skirmish_map_name(f.maps, f.sk) : std::string();
+    if (on) f.gen_last = f.sk.gen;
+    if (on && set_field) f.gen_typed_ok = true;
+    for (Widget& w : win.widgets) {
+        if (w.role == Role::Gen) w.visible = on;
+        if (!on) continue;
+        if (w.action == Action::SkGenSwitch) {
+            w.value = gen_switch(f.sk.gen, static_cast<GenSwitch>(w.row));
+        } else if (w.action == Action::SkGenSize) {
+            w.sel = f.sk.gen.size;
+        } else if (w.action == Action::SkGenCode && set_field) {
+            edit_set_text(f, w, code);
+        }
+    }
+    Widget* image = find_role(win, Role::Preview);
+    if (on && f.gen_typed_ok && code != f.gen_built) {
+        f.gen_built = code;
+        sim::MapGenSettings g = f.sk.gen;
+        g.players = static_cast<std::uint8_t>(f.sk.players);
+        gen_ask(f, f.gen_job, g);
+        f.gen_pending = true;
+        if (image) image->pic = Picture{};
+        for (Widget& w : win.widgets) {
+            if (w.role == Role::GenMark) w.visible = false;
+        }
+    }
+    std::optional<GenResult> built;
+    if (on && f.gen_pending) built = gen_take(*f.gen_job, wait);
+    if (built) {
+        f.gen_pending = false;
+        f.gen_ok = built->ok;
+        if (built->ok) {
+            if (image) set_minimap_picture(f, *image, built->preview, f.gen_built);
+            SDL_Log("front-end: generated map %s in %.0f ms", f.gen_built.c_str(), built->ms);
+        } else {
+            SDL_Log("front-end: generated map %s: %s", f.gen_built.c_str(), built->error.c_str());
+        }
+        for (Widget& w : win.widgets) {
+            if (w.role != Role::GenMark) continue;
+            w.visible = w.row < static_cast<int>(built->marks.size());
+            if (!w.visible) continue;
+            const auto& p = built->marks[static_cast<std::size_t>(w.row)];
+            w.x = kGenPreviewX + p[0] * kGenPreviewSide / Minimap::kSide - w.w / 2;
+            w.y = kGenPreviewY + p[1] * kGenPreviewSide / Minimap::kSide - w.h / 2;
+        }
+    }
+    if (!on || !f.gen_typed_ok) {  // no generated map, or no code to build: no picture and no numbers
+        for (Widget& w : win.widgets) {
+            if (w.role == Role::GenMark) w.visible = false;
+        }
+        if (on && image) image->pic = Picture{};
+        f.gen_built.clear();
+        f.gen_pending = false;  // a build still running is dropped by the next ask
+    }
+    std::string why;
+    if (on && !f.gen_typed_ok) {
+        why = ours(f, "skirmish.gen_bad_code");
+    } else if (on && f.gen_pending) {
+        why = ours(f, "skirmish.gen_generating");
+    } else if (on && !f.gen_ok) {
+        why = ours(f, "skirmish.gen_no_map");
+    } else if (on && SDL_GetTicks() < f.gen_copied_ms) {
+        why = ours(f, "skirmish.gen_copied");
+    } else if (on && f.sk.gen.islands &&
+               (f.sk.gen_teams_dropped ||
+                (f.sk.gen.island_plan != 0 &&
+                 !sim::MapGen_IslandPlanFits(f.sk.gen.size, f.sk.players, f.sk.gen.island_plan)))) {
+        why = ours(f, "skirmish.gen_islands_drawn");  // a plan that does not fit builds the islands of no teams
+    }
+    if (Widget* status = find_role(win, Role::GenStatus)) {
+        status->visible = !why.empty();
+        if (!why.empty() && why != status->label) {
+            status->x = kGenPreviewX - 10, status->w = kGenPreviewSide + 20, status->centred = true;
+            relabel(f, *status, why, kCream, "skirmish.gen_status");
+        }
+    }
+    if (on) {
+        if (Widget* start = find_role(win, Role::Start)) start->enabled = f.gen_typed_ok && (f.gen_ok || f.gen_pending);
+    }
+}
+
+// The preview's build is shown in the screen that has it (`wait`: waited for). Start and Create wait for it, so they
+// hand over a code only once it made a map.
+void gen_poll(Frontend& f, bool wait) {
+    if (!f.gen_pending) return;
+    for (Window& win : f.stack) {
+        if (find_role(win, Role::GenStatus)) gen_refresh(f, win, false, wait);
+    }
+}
+
+// The code field changed (typed, pasted, a character removed): a code sets every choice from it (the player count
+// too); anything else keeps the choices and switches Start off until the field holds a code.
+void gen_code_typed(Frontend& f, Window& win, const std::string& text) {
+    std::string err;
+    f.gen_typed_ok = skirmish_gen_code(f.sk, text, &err);
+    if (f.gen_typed_ok) sync_skirmish(f, win);
+    gen_refresh(f, win, false);
+}
+
+// The code field takes printable ASCII without spaces, at most 32 characters.
+std::string gen_code_clip(const std::string& text) {
+    std::string out;
+    for (char c : text) {
+        if (c > 0x20 && c < 0x7f && out.size() < 32) out += c;
+    }
+    return out;
+}
+
 
 // MP_Fon_P4 over "Single Player", row 0 is your network name, the levels end with Human (level 5, a player who joins),
 // row 1 is one at first, the game speed under the player count and resources, and Create (Multiplay.les) in place of
@@ -2420,6 +2753,17 @@ bool open_skirmish(Frontend& f, std::string* error, bool net = false) {
     f.sk = skirmish_defaults(net ? f.net.name : player_name(f));
     f.sk.plus = f.plus;
     f.net_host = net;
+    // ours, slice G7: the generated map first, with the choices made last (a new seed the first time); the network
+    // host's setup too since slice G8 (the setup sends the code, every machine builds the map)
+    f.sk.gen_offered = true;
+    if (f.gen_last) {
+        f.sk.gen = *f.gen_last;
+    } else {
+        f.sk.gen.seed =
+            f.seed ? gen_next_seed(*f.seed) : static_cast<std::uint32_t>(SDL_rand_bits() ^ SDL_GetTicksNS());
+    }
+    f.sk.gen.players = static_cast<std::uint8_t>(f.sk.players);
+    f.gen_built.clear(), f.gen_typed_ok = true;
     if (net) f.sk.rows[1].level = 5;
     Window win;
     Archive a;
@@ -2512,6 +2856,7 @@ bool open_skirmish(Frontend& f, std::string* error, bool net = false) {
     preview.role = Role::Preview;
     preview.x = 668, preview.y = 359, preview.w = 290, preview.h = 293;
     win.widgets.push_back(std::move(preview));
+    if (!add_generated_choices(f, win, error)) return false;
     // one row per slot: your name, or the level; nation; colour; team
     std::vector<std::string> levels = strings_numbered(f, "MP_LEVEL", 0, 4);
     if (net) levels.push_back(ours(f, "skirmish.human"));
@@ -2658,11 +3003,13 @@ void start_skirmish(Frontend& f, const sim::SkirmishSetup& setup) {
 
 
 
+
 void skirmish_start(Frontend& f) {
-    const MapEntry* m = map_at(f.maps, f.sk.players, f.sk.map);
-    if (!m) return;
+    gen_poll(f, true);  // the map of the code shown, built
+    const std::string map = skirmish_map_name(f.maps, f.sk);
+    if (map.empty() || (skirmish_generated(f.sk) && !(f.gen_ok && f.gen_typed_ok))) return;
     const std::uint32_t seed = f.seed ? *f.seed : static_cast<std::uint32_t>(SDL_rand_bits() ^ SDL_GetTicksNS());
-    start_skirmish(f, skirmish_setup(f.sk, m->file, seed, f.settings));
+    start_skirmish(f, skirmish_setup(f.sk, map, seed, f.settings));
 }
 
 const Widget* find(const Window& w, Kind kind, int nth) {
@@ -2771,13 +3118,67 @@ std::string map_title(const std::string& file) {
     return file.size() > 4 && file.compare(file.size() - 4, 4, ".dat") == 0 ? file.substr(0, file.size() - 4) : file;
 }
 
+// Ours, slice G8: the network pages' line of a game's map: a map file's name, or "generated" and the map code.
+std::string net_map_line(Frontend& f, const std::string& map) {
+    if (sim::MapGen_ParseCode(map, nullptr)) return ours(f, "net.map_generated", {{"code", data(f, map)}});
+    return ours(f, "net.map", {{"map", data(f, map_title(map))}});
+}
+
+// The network page shows no generated map now: a build still running is not shown (the next ask drops it).
+void net_gen_drop(Frontend& f) {
+    f.net_gen_code.clear();
+    f.net_gen_pending = false;
+}
+
+// Ours, slice G8: a network page's map picture: a map file's Maps/<name>_m.min, or the generated map built from its
+// code (every machine builds the same map) on a thread (gen_ask; empty until frontend_draw finds it built, batch
+// screenshots wait for it). The code built last is kept with its picture.
+void net_map_picture(Frontend& f, Widget& image, const std::string& map) {
+    const std::optional<sim::MapGenSettings> gen = sim::MapGen_ParseCode(map, nullptr);
+    if (!gen) {
+        net_gen_drop(f);
+        load_preview(f, image, map);
+        return;
+    }
+    image.pic = Picture{};
+    if (map != f.net_gen_code) {
+        f.net_gen_code = map;
+        f.net_gen_preview.reset();
+        gen_ask(f, f.net_gen_job, *gen);
+        f.net_gen_pending = true;
+    }
+    if (f.net_gen_pending) {
+        if (std::optional<GenResult> r = gen_take(*f.net_gen_job, !f.animate)) {
+            f.net_gen_pending = false;
+            if (r->ok) {
+                f.net_gen_preview = std::move(r->preview);
+                SDL_Log("front-end: generated map %s in %.0f ms", map.c_str(), r->ms);
+            } else {
+                SDL_Log("front-end: generated map %s: %s", map.c_str(), r->error.c_str());
+            }
+        }
+    }
+    if (f.net_gen_preview) set_minimap_picture(f, image, *f.net_gen_preview, map);
+}
+
+// The network pages' generated map once built: the picture of the topmost network page, the one that asked for it.
+void net_gen_poll(Frontend& f) {
+    if (!f.net_gen_pending) return;
+    for (auto win = f.stack.rbegin(); win != f.stack.rend(); ++win) {
+        if (win->screen != Screen::NetGames && win->screen != Screen::NetLobby) continue;
+        for (Widget& w : win->widgets) {
+            if (w.role == Role::Preview) net_map_picture(f, w, f.net_gen_code);
+        }
+        return;
+    }
+}
+
 // Page 2's list, picture and lines follow f.net_found, the typed address and the selected address.
 void net_games_refresh(Frontend& f, Window& win) {
     f.net_rows.clear();
     if (!f.net_ip.empty()) {
         NetGameRow typed;
-        typed.address =
-            f.net_ip.find(':') == std::string::npos ? f.net_ip + ":" + std::to_string(f.net.port) : f.net_ip;
+        typed.address = frontend_address_with_port(f.net_ip, f.net.port);
         typed.name = ours(f, "net.typed", {{"address", data(f, typed.address)}});
         f.net_rows.push_back(typed);
     }
@@ -2808,7 +3209,7 @@ void net_games_refresh(Frontend& f, Window& win) {
     } else {
         const NetGameRow& r = f.net_rows[static_cast<std::size_t>(sel)];
         map = r.map;
-        lines = {ours(f, "net.map", {{"map", data(f, map_title(r.map))}}),
+        lines = {net_map_line(f, r.map),
                  ours(f, "net.players_of", {{"n", std::to_string(r.humans)}, {"max", std::to_string(r.max_humans)}}),
                  ours(f, "net.address", {{"address", data(f, r.address)}})};
         if (r.locked) lines.push_back(ours(f, "net.password_needed"));
@@ -2820,7 +3221,11 @@ void net_games_refresh(Frontend& f, Window& win) {
             w.sel = sel;
         } else if (w.role == Role::Preview) {
             w.pic = Picture{};
-            if (!map.empty()) load_preview(f, w, map);
+            if (!map.empty()) {
+                net_map_picture(f, w, map);
+            } else {
+                net_gen_drop(f);
+            }
         } else if (w.role == Role::NetInfo) {
             rows.push_back(&w);
         }
@@ -2999,9 +3404,16 @@ bool open_net_lobby(Frontend& f, std::string* error) {
             win.widgets.push_back(std::move(seat));
         }
     }
-    win.widgets.push_back(
-        make_plain_label(f, ours(f, "net.map", {{"map", data(f, map_title(l.map))}}), 58, 644, kCream));
+    win.widgets.push_back(make_plain_label(f, net_map_line(f, l.map), 58, 644, kCream));
     fit_label(f, win.widgets.back(), "lobby.map");
+    if (sim::MapGen_ParseCode(l.map, nullptr)) {  // ours, slice G8: the generated map's picture over the banner's right
+        Widget preview;
+        preview.kind = Kind::Image;
+        preview.role = Role::Preview;
+        preview.x = 846, preview.y = 50, preview.w = preview.h = 128;
+        net_map_picture(f, preview, l.map);
+        win.widgets.push_back(std::move(preview));
+    }
     // ours: the rule set of the host's setup, for everyone (docs/your-version.md)
     win.widgets.push_back(make_plain_label(
         f, ours(f, "net.rules", {{"rules", ours(f, l.plus ? "skirmish.rules_plus" : "skirmish.rules_classic")}}), 58,
@@ -3182,10 +3594,32 @@ void do_action(Frontend& f, Widget& w) {
             show_map(f, f.stack.back());
             break;
         case Action::SkNext:
-            if (map_at(f.maps, f.sk.players, f.sk.map + 1)) ++f.sk.map;
+            if (skirmish_has_entry(f.maps, f.sk, f.sk.map + 1)) ++f.sk.map;
             show_map(f, f.stack.back());
             break;
+        case Action::SkGenSwitch:  // ours, slice G7: the generated map's choices
+            gen_set_switch(f.sk.gen, static_cast<GenSwitch>(w.row), w.value);
+            skirmish_gen_teams(f.sk);
+            gen_refresh(f, f.stack.back(), true);
+            break;
+        case Action::SkGenSize:
+            skirmish_gen_size(f.sk, w.sel);
+            gen_refresh(f, f.stack.back(), true);
+            break;
+        case Action::SkGenNew:
+            f.sk.gen.seed =
+                f.seed ? gen_next_seed(f.sk.gen.seed) : static_cast<std::uint32_t>(SDL_rand_bits() ^ SDL_GetTicksNS());
+            gen_refresh(f, f.stack.back(), true);
+            break;
+        case Action::SkGenCopy:  // the code as the field shows it; "Copied" for 1.5 s (frontend_draw ends it)
+            for (const Widget& e : f.stack.back().widgets) {
+                if (e.action == Action::SkGenCode) SDL_SetClipboardText(e.label.c_str());
+            }
+            f.gen_copied_ms = SDL_GetTicks() + 1500;
+            gen_refresh(f, f.stack.back(), false);
+            break;
         case Action::SkStart: skirmish_start(f); break;
+        case Action::SkGenCode: break;             // the field takes its text in frontend_event (gen_code_typed)
         case Action::SkBack: close_top(f); break;
         case Action::MessageClose: close_top(f); break;
         case Action::GameMessageClose: f.request = FrontendRequest::MessageClosed; break;
@@ -3440,16 +3874,19 @@ void do_action(Frontend& f, Widget& w) {
             if (f.sk.map < 0) {
                 SDL_Log("front-end: the scenario's map %s is not in the map list", map.c_str());
                 f.sk.map = 0;
+            } else if (f.sk.gen_offered) {
+                ++f.sk.map;  // after the generated map (slice G8)
             }
             show_map(f, f.stack.back());
             break;
         }
-        case Action::NetHostCreate: {
-            const MapEntry* m = map_at(f.maps, f.sk.players, f.sk.map);
-            if (!m) break;
+        case Action::NetHostCreate: {  // ours, slice G8: a generated map goes over as its code, as Start's
+            gen_poll(f, true);         // the map of the code shown, built
+            const std::string map = skirmish_map_name(f.maps, f.sk);
+            if (map.empty() || (skirmish_generated(f.sk) && !(f.gen_ok && f.gen_typed_ok))) break;
             const std::uint32_t seed =
                 f.seed ? *f.seed : static_cast<std::uint32_t>(SDL_rand_bits() ^ SDL_GetTicksNS());
-            f.setup = skirmish_setup(f.sk, m->file, seed, f.settings);
+            f.setup = skirmish_setup(f.sk, map, seed, f.settings);
             SDL_Log("front-end: Create, %s", describe(f.setup).c_str());
             f.request = FrontendRequest::NetHost;
             break;
@@ -3706,12 +4143,17 @@ void widget_event(Frontend& f, Window& win, Widget& w, int ev, int mx, int my) {
         case Kind::MuseumCombo: museum_combo_event(f, w, ev, mx, my); break;
         case Kind::Edit:
             if (ev == 0) edit_focus(w);
+            // ours: a press on the map code selects it all (typing or Ctrl+V replaces it, Ctrl+C copies it)
+            if (ev == 0 && w.action == Action::SkGenCode) w.selected = !w.label.empty();
             break;
         case Kind::TextList:
             if (ev == 0) ++f.clicks, text_list_press(f, w, mx, my);
             break;
-        case Kind::Choice:  // ours: a press shows the next value
-            if (ev == 0 && !w.strs.empty()) w.sel = (w.sel + 1) % static_cast<int>(w.strs.size());
+        case Kind::Choice:  // ours: a press shows the next value (and calls its action, when it has one)
+            if (ev == 0 && !w.strs.empty()) {
+                w.sel = (w.sel + 1) % static_cast<int>(w.strs.size());
+                if (w.action != Action::None) ++f.clicks, do_action(f, w);
+            }
             break;
         case Kind::TextBox: textbox_event(f, w, ev, mx, my); break;  // slice I8
         case Kind::Image:
@@ -3886,7 +4328,7 @@ FrontendRequest frontend_event(Frontend& f, const SDL_Event& e) {
                         combo_close(o);
                         do_action(f, o);
                     } else if (o.kind == Kind::Edit) {
-                        o.focused = false;
+                        o.focused = false, o.selected = false;
                     }
                 }
             }
@@ -3913,10 +4355,35 @@ FrontendRequest frontend_event(Frontend& f, const SDL_Event& e) {
             if (key == SDLK_BACKSPACE) {
                 for (Widget& w : f.stack[top].widgets) {
                     if (w.kind == Kind::Edit && w.focused && !w.label.empty()) {
-                        std::size_t cut = w.label.size() - 1;
+                        std::size_t cut = w.selected ? 0 : w.label.size() - 1;  // a selection goes as a whole
                         while (cut > 0 && (static_cast<unsigned char>(w.label[cut]) & 0xc0) == 0x80) --cut;
+                        w.selected = false;
                         edit_set_text(f, w, w.label.substr(0, cut));
+                        if (w.action == Action::SkGenCode) gen_code_typed(f, f.stack[top], w.label);
+                        break;
                     }
+                }
+            }
+            // ours: Home, End and the arrows end a selection (the text stays, Backspace then takes one character)
+            if (key == SDLK_HOME || key == SDLK_END || key == SDLK_LEFT || key == SDLK_RIGHT) {
+                for (Widget& w : f.stack[top].widgets) w.selected = false;
+            }
+            // ours, slice G7: the map code field copies (Ctrl+C), takes a pasted code in place of its text (Ctrl+V)
+            // and selects it all (Ctrl+A)
+            if ((key == SDLK_C || key == SDLK_V || key == SDLK_A) && (e.key.mod & SDL_KMOD_CTRL) != 0) {
+                for (Widget& w : f.stack[top].widgets) {
+                    if (w.kind != Kind::Edit || !w.focused || w.action != Action::SkGenCode) continue;
+                    if (key == SDLK_A) {
+                        w.selected = !w.label.empty();
+                    } else if (key == SDLK_C) {
+                        SDL_SetClipboardText(w.label.c_str());
+                    } else if (char* clip = SDL_GetClipboardText()) {
+                        w.selected = false;
+                        edit_set_text(f, w, gen_code_clip(clip));
+                        SDL_free(clip);
+                        gen_code_typed(f, f.stack[top], w.label);
+                    }
+                    break;
                 }
             }
             break;
@@ -3924,13 +4391,19 @@ FrontendRequest frontend_event(Frontend& f, const SDL_Event& e) {
         case SDL_EVENT_TEXT_INPUT: {
             for (Widget& w : f.stack[top].widgets) {
                 if (w.kind != Kind::Edit || !w.focused) continue;
-                std::string t = w.label + e.text.text;
+                std::string t = (w.selected ? std::string() : w.label) + e.text.text;  // a selection is replaced
+                w.selected = false;
                 t.erase(std::remove_if(t.begin(), t.end(), [](char c) { return static_cast<unsigned char>(c) < 0x20; }),
                         t.end());
                 edit_set_text(f, w,
-                              w.action == Action::FileSave   ? save_name_clip(t)
-                              : w.action == Action::NetField ? net_field_clip(t, w.max_chars)
-                                                             : profile_name_clip(t));
+                              w.action == Action::FileSave    ? save_name_clip(t)
+                              : w.action == Action::NetField  ? net_field_clip(t, w.max_chars)
+                              : w.action == Action::SkGenCode ? gen_code_clip(t)
+                                                              : profile_name_clip(t));
+                if (w.action == Action::SkGenCode) {
+                    gen_code_typed(f, f.stack[top], w.label);
+                    break;
+                }
             }
             break;
         }
@@ -4003,7 +4476,9 @@ void draw_widget(Frontend& f, const Window& win, const Widget& w) {
         case Kind::CheckBox: {
             const SDL_FRect src{static_cast<float>(w.value ? w.w : 0), 0, static_cast<float>(w.w),
                                 static_cast<float>(w.h)};
+            if (w.dimmed) SDL_SetTextureColorMod(w.pic.tex.get(), 128, 128, 128);  // ours: not offered yet
             blit(r, w.pic, &src, x, y, static_cast<float>(w.w), static_cast<float>(w.h));
+            if (w.dimmed) SDL_SetTextureColorMod(w.pic.tex.get(), 255, 255, 255);
             break;
         }
         case Kind::Slider: {
@@ -4049,6 +4524,12 @@ void draw_widget(Frontend& f, const Window& win, const Widget& w) {
             const float shift = static_cast<float>(tw) >= avail ? static_cast<float>(tw) - avail + 1 : 0;
             const SDL_Rect clip{static_cast<int>(x) + w.ox, static_cast<int>(y), static_cast<int>(avail), w.h};
             SDL_SetRenderClipRect(r, &clip);
+            if (w.selected && w.focused && tw > 0) {  // ours: the selection's highlight behind the text
+                const SDL_FRect hl{x + static_cast<float>(w.ox) - shift - 1, y + 2, static_cast<float>(tw) + 2,
+                                   static_cast<float>(w.h - 4)};
+                SDL_SetRenderDrawColor(r, 0x3a, 0x5f, 0xa8, 0xff);
+                SDL_RenderFillRect(r, &hl);
+            }
             if (w.text)
                 TTF_DrawRendererText(w.text.get(), x + static_cast<float>(w.ox) - shift, y + static_cast<float>(w.oy));
             // the bar after the text blinks while the field has the focus (the original counts frames; this runs
@@ -4306,6 +4787,14 @@ void draw_tip(Frontend& f) {
 
 void frontend_draw(Frontend& f) {
     if (f.museum_wait) museum_poll(f);
+    gen_poll(f, !f.animate);  // the generated map's preview, once built (batch screenshots wait for it)
+    net_gen_poll(f);
+    if (f.gen_copied_ms != 0 && SDL_GetTicks() >= f.gen_copied_ms) {  // the map code's "Copied" ends
+        f.gen_copied_ms = 0;
+        for (Window& win : f.stack) {
+            if (find_role(win, Role::GenStatus)) gen_refresh(f, win, false);
+        }
+    }
 
     for (Window& win : f.stack) {
         for (const Widget& w : win.widgets) {
@@ -4572,6 +5061,15 @@ std::string save_name_clip(const std::string& text) {
 
 const NetChoices& frontend_net_choices(const Frontend& f) { return f.net; }
 
+std::string frontend_address_with_port(const std::string& typed, std::uint16_t port) {
+    const std::string p = ":" + std::to_string(port);
+    if (!typed.empty() && typed[0] == '[') return typed.back() == ']' ? typed + p : typed;  // "[v6]" or "[v6]:port"
+    const std::size_t colon = typed.find(':');
+    if (colon == std::string::npos) return typed + p;                   // a name or an IPv4 address
+    if (typed.find(':', colon + 1) == std::string::npos) return typed;  // host:port
+    return "[" + typed + "]" + p;                                       // a bare IPv6 address
+}
+
 bool apply_skirmish_spec(Frontend& f, const std::string& spec, std::string* error);  // below
 
 bool frontend_skirmish_choices(Frontend& f, const std::string& spec, std::string* error) {
@@ -4651,12 +5149,38 @@ bool apply_skirmish_spec(Frontend& f, const std::string& spec, std::string* erro
             skirmish_set_resources(f.sk, std::atoi(value.c_str()));
         } else if (key == "rules") {  // "classic" or "plus"
             f.sk.plus = value == "plus";
+        } else if (key == "map" && value == "generated") {  // ours, slice G7: the generated map
+            if (!f.sk.gen_offered) {
+                *error = "this screen does not offer the generated map";
+                return false;
+            }
+            f.sk.map = 0;
         } else if (key == "map") {
             f.sk.map = map_index(f.maps, f.sk.players, value);
             if (f.sk.map < 0) {
                 *error = "map " + value + " is not in the list";
                 return false;
             }
+            if (f.sk.gen_offered) ++f.sk.map;  // after the generated map
+        } else if (key == "code") {  // ours, slice G7: the generated map from a map code (its player count too)
+            if (!f.sk.gen_offered || !skirmish_gen_code(f.sk, value, error)) {
+                if (!f.sk.gen_offered) *error = "this screen does not offer the generated map";
+                return false;
+            }
+            f.sk.map = 0;
+        } else if (key == "size") {  // 0 Normal, 1 Large
+            skirmish_gen_size(f.sk, std::atoi(value.c_str()));
+        } else if (key == "winter" || key == "sea" || key == "islands" || key == "mountains" ||
+                   key == "forest") {  // 0 or 1
+            const GenSwitch which = key == "winter"      ? GenSwitch::Winter
+                                    : key == "sea"       ? GenSwitch::Sea
+                                    : key == "islands"   ? GenSwitch::Islands
+                                    : key == "mountains" ? GenSwitch::Mountains
+                                                         : GenSwitch::DenseForest;
+            gen_set_switch(f.sk.gen, which, std::atoi(value.c_str()) != 0);
+            skirmish_gen_teams(f.sk);
+        } else if (key == "seed") {  // the generated map's seed, hex
+            f.sk.gen.seed = static_cast<std::uint32_t>(std::strtoul(value.c_str(), nullptr, 16));
         } else if (key == "slots") {
             std::size_t row = 0, at = 0;
             while (at < value.size() && row < 8) {
@@ -4786,6 +5310,15 @@ bool frontend_show(Frontend& f, const std::string& screen, std::string* error) {
                        ours(f, "net.join_at", {{"address", "192.0.2.10"}, {"port", "47625"}})};
             return frontend_net_lobby(f, l, error);
         }
+        if (screen == "network_lobby_generated") {  // ours, slice G8: the lobby of a game on a generated map
+            NetLobby l;
+            l.title = ours(f, "net.game_title", {{"name", data(f, f.net.name)}}), l.map = "v1-N-3-W-3F9A2C71";
+            l.slots = {{f.net.name, 0, 0, 0, true, true},
+                       {data(f, "Guest"), 1, 1, 0, true, true},
+                       {ours(f, "net.slot_medium"), 5, 2, 0, false, false}};
+            l.lines = {ours(f, "net.all_in")};
+            return frontend_net_lobby(f, l, error);
+        }
         if (screen == "network_lobby8") {  // slice MP8: eight humans, all in (the eight player test's setup)
             NetLobby l;
             l.title = ours(f, "net.game_title", {{"name", data(f, f.net.name)}}), l.map = "Aust_3r_3.dat",
@@ -4798,8 +5331,10 @@ bool frontend_show(Frontend& f, const std::string& screen, std::string* error) {
                        ours(f, "net.join_at", {{"address", "192.0.2.10"}, {"port", "47625"}})};
             return frontend_net_lobby(f, l, error);
         }
-        *error = "unknown screen '" + screen +
-                 "' (network, network_games, network_host[_plus], network_lobby[8]; network_scenarios is the app's)";
+        *error =
+            "unknown screen '" + screen +
+            "' (network, network_games, network_host[_plus], network_lobby[8|_generated]; network_scenarios is the "
+            "app's)";
         return false;
     }
     if (screen == "game_menu" || screen == "confirm_restart") {

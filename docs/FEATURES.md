@@ -71,6 +71,8 @@ The original's saves lose or change several things on loading. Entente Engine's 
 **The computer and your advisors**
 
 - A Difficult computer's second barracks trains its mortar men instead of queueing them into the first.
+- A computer's half-full transport no longer waits forever for soldiers who cannot reach it, and ships no longer
+  lose their way near their target.
 - A Difficult computer that lacks a required building builds it first, instead of asking for the wrong one.
 - A destroyed first Academy of Sciences no longer ends research for good: the first Academy that stands is used.
 - The computer's units no longer give up their orders when more than 100 wait for a route in one game turn.
@@ -147,6 +149,7 @@ The original's saves lose or change several things on loading. Entente Engine's 
 - **Player profiles:** typing a name that exists picks that profile instead of renaming the chosen one; empty names
   are not added.
 - **Windows you drag** follow the pointer, also over their own buttons and at the screen's edge.
+- **Order queues:** Shift + right click plans several orders in a row for the selected units.
 - Pausing keeps the selection panel open. Holding Shift and clicking one of your units adds it to the selection or
   takes it out, once (the original kept switching it while the button was held).
 
@@ -181,7 +184,15 @@ The original's saves lose or change several things on loading. Entente Engine's 
 | No autosave, F5 refused | Autosave every 1 to 15 minutes (default 5, last 3 kept); F5 works too |
 | A saved network game cannot be continued | It can, and everyone gets their own seat back |
 
-Every player's PC runs the same game and only the orders travel over the network.
+Every player's PC runs the same game and only the orders travel over the network. The host can be reached over IPv4
+and IPv6.
+
+## Generated maps
+
+The first entry of the skirmish map list makes a new map for 2 to 8 players: land, Sea or Islands, with Mountains,
+Dense forest or Winter, in Normal or Large size. Every map is checked to be fair before you see it: the same
+resources for every player at about the same distances, about as much land each and, on water maps, about as far
+to the sea. A map's short code makes the same map again, also in a network game.
 
 ## Languages
 

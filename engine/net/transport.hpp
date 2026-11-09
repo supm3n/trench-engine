@@ -68,7 +68,8 @@ std::unique_ptr<Connection> Loopback_Connect(LoopbackHub& hub, const std::string
 
 // ---- WebSocket (plain ws://, no TLS yet: a LAN or VPN; TLS comes with the server step) ----
 
-// Listens on ws://<host>:<port>/ (host "0.0.0.0": every interface). nullptr and the reason when it cannot.
+// Listens on ws://<host>:<port>/ (host "0.0.0.0": every interface, on IPv6 ("::") too where the PC has it, decision
+// 55; an IPv6 host such as "::1": IPv6 only). nullptr and the reason when it cannot.
 std::unique_ptr<Listener> Ws_Listen(const std::string& host, int port, std::string* error);
 // Connects to a ws:// URL; the connection starts as Connecting. nullptr and the reason for a bad URL.
 std::unique_ptr<Connection> Ws_Connect(const std::string& url, std::string* error);

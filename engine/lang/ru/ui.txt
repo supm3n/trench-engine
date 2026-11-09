@@ -79,6 +79,37 @@ skirmish.rules_classic = Entente Engine
 skirmish.rules_plus = Entente Engine Plus
 #@ en=c9bc7b src=ai
 skirmish.rules_plus_tip = Entente Engine Plus: переработанные правила для сражений (исследования делают то, что сказано в их описании, более честные цены и не только). Миссии и кампании всегда идут по правилам Entente Engine.
+#@ en=ffffc4 src=ai
+skirmish.gen_title = Созданная карта
+#@ en=24615d src=ai
+skirmish.gen_winter = Зима
+#@ en=58c23f src=ai
+skirmish.gen_sea = Море
+#@ en=afa70d src=ai
+skirmish.gen_islands = Острова
+#@ en=06beda src=ai
+skirmish.gen_mountains = Горы
+#@ en=da0bb7 src=ai
+skirmish.gen_forest = Густой лес
+#@ en=6b567e src=ai
+#@ en=3f3b2c src=ai
+skirmish.gen_normal = Обычный размер
+#@ en=57db07 src=ai
+skirmish.gen_large = Большой размер
+#@ en=43897b src=ai
+skirmish.gen_new = Новая карта
+#@ en=af74f7 src=ai
+skirmish.gen_copy = Копировать
+#@ en=a89919 src=ai
+skirmish.gen_bad_code = Это не код карты.
+#@ en=dc945b src=ai
+skirmish.gen_no_map = Из этого кода не получается карта. Нажмите «Новая карта».
+#@ en=2a68a9 src=ai
+skirmish.gen_copied = Код карты скопирован.
+#@ en=95ca50 src=ai
+skirmish.gen_islands_drawn = Команды слишком неравны для островов. Острова распределены как без команд.
+#@ en=8b10d9 src=ai
+skirmish.gen_generating = Создаётся карта ...
 #@ en=a6d46a src=ai
 research.plus_war7 = Разрывные пули (+15% к атаке пехоты из винтовки)
 #@ en=2e6818 src=ai
@@ -269,6 +300,8 @@ net.address = Адрес: {address}
 net.details_on_join = Сведения об игре появятся после подключения.
 #@ en=053c35 src=ai
 net.map = Карта: {map}
+#@ en=19281e src=ai
+net.map_generated = Карта: созданная, {code}
 #@ en=77ad3e src=ai
 net.rules = Правила: {rules}
 #@ en=7a9548 src=ai
@@ -316,7 +349,9 @@ net.seat_help = Щелчок по свободному месту: за него
 #@ en=86c0a9 src=ai
 net.seat_move = Выберите свободное место для {name}.
 #@ en=bf0619 src=ai
-net.join_at = Другие подключаются к {address}, порт {port}.
+net.join_at = В той же сети другие подключаются к {address}, порт {port}.
+net.join_internet = Через интернет им нужен Ваш внешний адрес.
+net.join_ipv6 = Через интернет (IPv6): {address}, порт {port}.
 #@ en=329abf src=ai
 net.this_pc = адрес этого ПК
 #@ en=bbfeb6 src=ai
@@ -330,7 +365,7 @@ net.joining = Подключение к {address} ...
 #@ en=2593a2 src=ai
 net.ended = Сетевая игра завершена: {reason}
 #@ en=595c28 src=ai
-net.no_answer = По адресу {address} ни одна игра не ответила. Проверьте, что у хозяина игра открыта и что брандмауэр Windows разрешает Entente Engine.
+net.no_answer = По адресу {address} ни одна игра не ответила. Проверьте, что у хозяина игра открыта и что брандмауэр Windows на его компьютере разрешает Entente Engine. Через интернет его роутер должен также перенаправлять TCP-порт 47625 (или выбранный порт) на этот компьютер, а с некоторых интернет-подключений создать игру нельзя вовсе.
 #@ en=dd0f10 src=ai
 update.newest = У Вас самая новая версия, Entente Engine {version}.
 #@ en=56e2f5 src=ai
@@ -356,9 +391,11 @@ crash.box = Entente Engine аварийно завершил работу. Пр�
 #@ en=883b15 src=ai
 start.failed = Entente Engine не удалось запустить.\n\nПричина записана в самом новом файле папки %APPDATA%\\EntenteEngine\\logs (вставьте этот путь в адресную строку окна Проводника). Пожалуйста, отправьте этот файл тому, от кого Вы получили игру.
 #@ en=9627c2 src=ai
-reason.net_protocol = версия протокола {theirs}, у сервера {ours}
+reason.net_protocol = версии игры различаются: у всех должна быть одна и та же версия Entente Engine (протокол {theirs}, у сервера {ours})
 #@ en=332495 src=ai
-reason.net_build = сборка {theirs}, у сервера {ours}
+reason.net_build = версии игры различаются: у всех должна быть одна и та же версия Entente Engine (у Вас {theirs}, у сервера {ours})
+#@ en=42d147 src=ai
+reason.net_map_code = код карты {code}: {reason}
 #@ en=a29205 src=ai
 reason.net_in_game = уже в игре
 #@ en=0ebd3d src=ai
@@ -378,7 +415,7 @@ reason.net_host_slot = место хоста не принадлежит чел�
 #@ en=42d461 src=ai
 reason.net_no_game = такой открытой игры нет
 #@ en=4a8559 src=ai
-reason.net_files_differ = Ваши файлы игры отличаются от файлов хоста
+reason.net_files_differ = Ваши файлы игры (папка Data) отличаются от файлов хоста
 #@ en=d8c64f src=ai
 reason.net_wrong_password = неверный пароль
 #@ en=9e99ff src=ai

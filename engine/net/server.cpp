@@ -9,6 +9,7 @@
 
 #include "net/lockstep.hpp"
 #include "net/protocol.hpp"
+#include "sim/mapgen.hpp"
 #include "sim/ownsave.hpp"
 #include "sim/skirmish.hpp"
 
@@ -159,10 +160,14 @@ struct Server::Impl {
         if (!c.hello) {
             if (m.type != MsgType::Hello) return error(c, "the first message must be the hello");
             if (m.version != kProtocolVersion) {
-                return error(c, "protocol version " + std::to_string(m.version) + ", the server has " +
-                                    std::to_string(kProtocolVersion));
+                return error(
+                    c, "the game versions differ: everyone needs the same version of Entente Engine (protocol " +
+                           std::to_string(m.version) + ", the server's " + std::to_string(kProtocolVersion) + ")");
             }
-            if (!build.empty() && m.build != build) return error(c, "build " + m.build + ", the server has " + build);
+            if (!build.empty() && m.build != build) {
+                return error(c, "the game versions differ: everyone needs the same version of Entente Engine (yours " +
+                                    m.build + ", the server's " + build + ")");
+            }
             c.hello = true, c.name = m.name.substr(0, 32), c.data_hash = m.data_hash;
             Message w;
             w.type = MsgType::Welcome, w.version = kProtocolVersion, w.name = name;
@@ -252,7 +257,18 @@ struct Server::Impl {
         g.hash_every = std::max<std::uint32_t>(cfg.hash_every, 1);
         // Each human slot's sim player as every machine's start makes it: the server knows it from the setup and the
         // map's position count, so no client can name another player's number.
-        const std::array<std::uint8_t, 8> players = sim::SkirmishSetup_SlotPlayers(g.setup, m.positions);
+        // Version 7 (slice G8): a generated map travels as its code in the map name, checked here once; it has the
+        // positions its code names. A name shaped like a code ("v<n>-...-...-...-...", no ".") is never a map file:
+        // one this build cannot read (another generator version, a bad switch) is refused.
+        std::string code_why;
+        const auto gen = sim::MapGen_ParseCode(g.setup.map, &code_why);
+        const std::string& map = g.setup.map;
+        if (!gen && !map.empty() && (map[0] == 'v' || map[0] == 'V') && map.find('.') == std::string::npos &&
+            std::count(map.begin(), map.end(), '-') == 4)
+            return error(c, "map code " + map + ": " + code_why);
+        if (gen) g.setup.map = sim::MapGen_Code(*gen);  // the canonical code for every machine and the games list
+        const std::array<std::uint8_t, 8> players =
+            sim::SkirmishSetup_SlotPlayers(g.setup, gen ? gen->players : m.positions);
         for (std::uint8_t i = 0; i < 8; ++i) {
             g.setup.names[i].clear();
             const std::uint8_t level = g.setup.slots[i].level;
@@ -294,7 +310,7 @@ struct Server::Impl {
         const auto it = games.find(m.game);
         if (it == games.end() || it->second.started) return error(c, "no such open game");
         Game& g = it->second;
-        if (c.data_hash != g.data_hash) return error(c, "your game files differ from the host's");
+        if (c.data_hash != g.data_hash) return error(c, "your game files (the Data folder) differ from the host's");
         if (m.password != g.password) return error(c, "wrong password");
         Seat* free = nullptr;
         if (!g.resume.empty() && m.token != 0) {  // slice MP9: a resumed game's player back on his own seat
@@ -319,7 +335,7 @@ struct Server::Impl {
         }
         if (s->left) return error(c, "the seat was given to the computer for the rest of the game");
         Game& g = it->second;
-        if (c.data_hash != g.data_hash) return error(c, "your game files differ from the host's");
+        if (c.data_hash != g.data_hash) return error(c, "your game files (the Data folder) differ from the host's");
         s->conn = id, s->want_state = true, s->held_until = 0, c.game = g.id, c.slot = s->slot;
         log(c.name + " is back in game " + std::to_string(g.id) + " slot " + std::to_string(s->slot));
         roster(g);

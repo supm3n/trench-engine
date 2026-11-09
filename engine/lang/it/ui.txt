@@ -79,6 +79,37 @@ skirmish.rules_classic = Entente Engine
 skirmish.rules_plus = Entente Engine Plus
 #@ en=c9bc7b src=ai
 skirmish.rules_plus_tip = Entente Engine Plus: regole riviste per le schermaglie (ricerche che fanno ciò che dice il loro testo, costi più equi e altro). Missioni e campagne usano sempre Entente Engine.
+#@ en=ffffc4 src=ai
+skirmish.gen_title = Mappa generata
+#@ en=24615d src=ai
+skirmish.gen_winter = Inverno
+#@ en=58c23f src=ai
+skirmish.gen_sea = Mare
+#@ en=afa70d src=ai
+skirmish.gen_islands = Isole
+#@ en=06beda src=ai
+skirmish.gen_mountains = Montagne
+#@ en=da0bb7 src=ai
+skirmish.gen_forest = Foresta fitta
+#@ en=6b567e src=ai
+#@ en=3f3b2c src=ai
+skirmish.gen_normal = Mappa normale
+#@ en=57db07 src=ai
+skirmish.gen_large = Mappa grande
+#@ en=43897b src=ai
+skirmish.gen_new = Nuova mappa
+#@ en=af74f7 src=ai
+skirmish.gen_copy = Copia
+#@ en=a89919 src=ai
+skirmish.gen_bad_code = Questo non è un codice mappa.
+#@ en=dc945b src=ai
+skirmish.gen_no_map = Da questo codice non si ottiene alcuna mappa. Premere Nuova mappa.
+#@ en=2a68a9 src=ai
+skirmish.gen_copied = Codice mappa copiato.
+#@ en=95ca50 src=ai
+skirmish.gen_islands_drawn = Squadre troppo diseguali per le isole. Isole distribuite come senza squadre.
+#@ en=8b10d9 src=ai
+skirmish.gen_generating = Creazione della mappa ...
 #@ en=a6d46a src=ai
 research.plus_war7 = Proiettili esplosivi (+15% attacco con il fucile della fanteria)
 #@ en=2e6818 src=ai
@@ -269,6 +300,8 @@ net.address = Indirizzo: {address}
 net.details_on_join = I dettagli arrivano quando partecipa.
 #@ en=053c35 src=ai
 net.map = Mappa: {map}
+#@ en=19281e src=ai
+net.map_generated = Mappa: generata, {code}
 #@ en=77ad3e src=ai
 net.rules = Regole: {rules}
 #@ en=7a9548 src=ai
@@ -316,7 +349,9 @@ net.seat_help = Clicchi su un posto libero: lo gioca il computer. Clicchi su un 
 #@ en=86c0a9 src=ai
 net.seat_move = Clicchi su un posto libero per spostarvi {name}.
 #@ en=bf0619 src=ai
-net.join_at = Gli altri si collegano a {address}, porta {port}.
+net.join_at = Nella stessa rete gli altri si collegano a {address}, porta {port}.
+net.join_internet = Via internet serve il Suo indirizzo pubblico.
+net.join_ipv6 = Via internet (IPv6): {address}, porta {port}.
 #@ en=329abf src=ai
 net.this_pc = l'indirizzo del PC
 #@ en=bbfeb6 src=ai
@@ -330,7 +365,7 @@ net.joining = Connessione a {address} ...
 #@ en=2593a2 src=ai
 net.ended = La partita in rete è terminata: {reason}
 #@ en=595c28 src=ai
-net.no_answer = Nessuna partita ha risposto a {address}. Controlla che chi ospita abbia il gioco aperto e che Windows Firewall consenta Entente Engine.
+net.no_answer = Nessuna partita ha risposto a {address}. Controlli che chi ospita abbia il gioco aperto e che Windows Firewall consenta Entente Engine sul suo PC. Via internet il suo router deve anche inoltrare la porta TCP 47625 (o quella scelta) a quel PC, e alcune linee internet non possono ospitare affatto.
 #@ en=dd0f10 src=ai
 update.newest = Ha già la versione più recente, Entente Engine {version}.
 #@ en=56e2f5 src=ai
@@ -356,9 +391,11 @@ crash.box = Entente Engine si è bloccato. Ci scusi!\n\nUn breve rapporto è sta
 #@ en=883b15 src=ai
 start.failed = Entente Engine non è riuscito ad avviarsi.\n\nIl motivo è scritto nel file più recente della cartella %APPDATA%\\EntenteEngine\\logs (incolli questo percorso nella barra degli indirizzi di una finestra di Esplora file). Invii quel file a chi Le ha dato il gioco.
 #@ en=9627c2 src=ai
-reason.net_protocol = versione del protocollo {theirs}, il server ha la {ours}
+reason.net_protocol = le versioni del gioco sono diverse: tutti devono avere la stessa versione di Entente Engine (protocollo {theirs}, quello del server {ours})
 #@ en=332495 src=ai
-reason.net_build = build {theirs}, il server ha la {ours}
+reason.net_build = le versioni del gioco sono diverse: tutti devono avere la stessa versione di Entente Engine (la Sua {theirs}, quella del server {ours})
+#@ en=42d147 src=ai
+reason.net_map_code = codice mappa {code}: {reason}
 #@ en=a29205 src=ai
 reason.net_in_game = già in una partita
 #@ en=0ebd3d src=ai
@@ -378,7 +415,7 @@ reason.net_host_slot = il posto dell'host non è un posto umano
 #@ en=42d461 src=ai
 reason.net_no_game = partita aperta non trovata
 #@ en=4a8559 src=ai
-reason.net_files_differ = file di gioco diversi da quelli dell'host
+reason.net_files_differ = file di gioco (la cartella Data) diversi da quelli dell'host
 #@ en=d8c64f src=ai
 reason.net_wrong_password = password errata
 #@ en=9e99ff src=ai

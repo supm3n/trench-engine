@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
+#include <functional>
+#include <vector>
 
 namespace antanta::ui {
 
@@ -120,11 +122,41 @@ SkirmishScreen skirmish_defaults(const std::string& name) {
     return s;
 }
 
+void skirmish_gen_teams(SkirmishScreen& s) {
+    s.gen.island_plan = 0;
+    s.gen_teams_dropped = false;
+    if (!s.gen.islands) return;
+    std::array<int, 9> members{};  // per team 1..8; index 0: the players without a team (and the closed rows)
+    for (int k = 0; k < s.players; ++k) {
+        const sim::SkirmishSlot& r = s.rows[static_cast<std::size_t>(k)];
+        ++members[r.level != 0 && r.team >= 1 && r.team <= 8 ? r.team : 0];
+    }
+    std::vector<int> sizes(static_cast<std::size_t>(members[0]), 1);
+    bool teams = false;
+    for (int t = 1; t <= 8; ++t) {
+        if (members[static_cast<std::size_t>(t)] > 0) sizes.push_back(members[static_cast<std::size_t>(t)]);
+        teams = teams || members[static_cast<std::size_t>(t)] > 0;
+    }
+    if (!teams || sizes.size() < 2 || sizes.size() > 4) return;  // the generator draws the islands then
+    std::sort(sizes.begin(), sizes.end(), std::greater<int>());
+    std::uint32_t plan = 0;
+    for (std::size_t i = 0; i < sizes.size(); ++i) plan |= static_cast<std::uint32_t>(sizes[i]) << (4 * i);
+    // Teams too uneven for the islands' room (sim::MapGen_IslandPlanFits): the islands of no teams, and the screen
+    // says so.
+    if (!sim::MapGen_IslandPlanFits(s.gen.size, s.players, plan)) {
+        s.gen_teams_dropped = true;
+        return;
+    }
+    s.gen.island_plan = plan;
+}
+
 void skirmish_set_players(SkirmishScreen& s, int players) {
     players = std::clamp(players, 2, 8);
+    s.gen.players = static_cast<std::uint8_t>(players);
     if (players == s.players) return;
     s.players = players;
     for (int k = players; k < 8; ++k) s.rows[k].level = 0;
+    skirmish_gen_teams(s);
 }
 
 void skirmish_set_resources(SkirmishScreen& s, int resources) { s.resources = std::clamp(resources, 0, 2); }
@@ -139,6 +171,7 @@ void skirmish_set_level(SkirmishScreen& s, int row, int level) {
         if (c >= 0) r.colour = static_cast<std::uint8_t>(c);
     }
     r.level = static_cast<std::uint8_t>(level);
+    skirmish_gen_teams(s);
 }
 
 void skirmish_set_nation(SkirmishScreen& s, int row, int nation) {
@@ -158,6 +191,79 @@ bool skirmish_set_colour(SkirmishScreen& s, int row, int colour) {
 void skirmish_set_team(SkirmishScreen& s, int row, int team) {
     if (row < 0 || row > 7) return;
     s.rows[row].team = static_cast<std::uint8_t>(std::clamp(team, 0, 8));
+    skirmish_gen_teams(s);
+}
+
+bool skirmish_generated(const SkirmishScreen& s) { return s.gen_offered && s.map == 0; }
+
+const MapEntry* skirmish_map_file(const std::vector<MapEntry>& maps, const SkirmishScreen& s, int index) {
+    return map_at(maps, s.players, s.gen_offered ? index - 1 : index);
+}
+
+bool skirmish_has_entry(const std::vector<MapEntry>& maps, const SkirmishScreen& s, int index) {
+    return (s.gen_offered && index == 0) || skirmish_map_file(maps, s, index) != nullptr;
+}
+
+std::string skirmish_map_name(const std::vector<MapEntry>& maps, const SkirmishScreen& s) {
+    if (skirmish_generated(s)) {
+        sim::MapGenSettings g = s.gen;
+        g.players = static_cast<std::uint8_t>(s.players);
+        return sim::MapGen_Code(g);
+    }
+    const MapEntry* m = skirmish_map_file(maps, s, s.map);
+    return m ? m->file : std::string();
+}
+
+bool gen_switch(const sim::MapGenSettings& g, GenSwitch w) {
+    switch (w) {
+        case GenSwitch::Winter: return g.winter;
+        case GenSwitch::Sea: return g.sea;
+        case GenSwitch::Islands: return g.islands;
+        case GenSwitch::Mountains: return g.mountains;
+        case GenSwitch::DenseForest: return g.dense_forest;
+    }
+    return false;
+}
+
+void gen_set_switch(sim::MapGenSettings& g, GenSwitch w, bool on) {
+    switch (w) {
+        case GenSwitch::Winter: g.winter = on; break;
+        case GenSwitch::Sea: g.sea = on, g.islands = g.islands && on; break;  // no islands without sea
+        case GenSwitch::Islands: g.islands = on, g.sea = g.sea || on; break;  // islands are a Sea map
+        case GenSwitch::Mountains: g.mountains = on; break;
+        case GenSwitch::DenseForest: g.dense_forest = on; break;
+    }
+}
+
+void skirmish_gen_size(SkirmishScreen& s, int size) { s.gen.size = static_cast<std::uint8_t>(std::clamp(size, 0, 1)); }
+
+bool skirmish_gen_code(SkirmishScreen& s, const std::string& code, std::string* error) {
+    const auto g = sim::MapGen_ParseCode(code, error);
+    if (!g) return false;
+    skirmish_set_players(s, g->players);
+    s.gen = *g;
+    // An island plan in the code sets the teams: the players in row order, one team per island.
+    if (g->islands && g->island_plan != 0) {
+        int row = 0;
+        const std::vector<int> sizes = sim::MapGen_IslandSizes(g->island_plan, g->players);
+        for (std::size_t i = 0; i < sizes.size(); ++i) {
+            for (int q = 0; q < sizes[i] && row < 8; ++q)
+                s.rows[static_cast<std::size_t>(row++)].team = static_cast<std::uint8_t>(i + 1);
+        }
+    }
+    return true;
+}
+
+std::uint32_t gen_next_seed(std::uint32_t seed) {
+    std::uint32_t x = seed + 0x9e3779b9u;  // a 32-bit mix (lowbias32), so the next codes do not look alike
+    x ^= x >> 16, x *= 0x7feb352du, x ^= x >> 15, x *= 0x846ca68bu, x ^= x >> 16;
+    return x != 0 ? x : 1;
+}
+
+std::string map_display_name(const std::string& map) {
+    if (map.size() > 4 && same_name(std::string_view(map).substr(map.size() - 4), ".dat"))
+        return map.substr(0, map.size() - 4);
+    return map;
 }
 
 sim::SkirmishSetup skirmish_setup(const SkirmishScreen& s, const std::string& map, std::uint32_t seed,

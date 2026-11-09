@@ -17,7 +17,7 @@ option(ANTANTA_SANITIZE "build with ASan and UBSan (clang)" OFF)
 # The version of the product "Entente Engine" (docs/release.md, docs/naming.md): the Windows version information, the
 # main menu's corner and the session and crash logs show it. By year: <year>.<n>, 2026.1 the first release, 2026.2
 # the next, 2027.1 the first of the next year. Raise it for every package that goes to friends.
-set(ANTANTA_VERSION 2026.1)
+set(ANTANTA_VERSION 2026.2)
 # The release exe for friends (docs/release.md, scripts/release.ps1): one file, the C++ runtime of llvm-mingw linked
 # in (only Windows' own DLLs are loaded), no console window, the icon and version information, no developer defaults.
 # Off in every build of the gate. It has to be set before the add_subdirectory calls below.
@@ -158,6 +158,13 @@ target_sources(antanta_sim PRIVATE sim/transport.cpp)  # transports and the sea 
 target_sources(antanta_sim PRIVATE sim/special.cpp)  # the special map objects: the pontoon bridge (docs/transports.md 19)
 target_sources(antanta_sim PRIVATE sim/mission.cpp)  # the mission start (docs/missions.md 2)
 target_sources(antanta_sim PRIVATE sim/mission_events.cpp)  # the mission event blocks (docs/missions.md 3)
+target_sources(antanta_sim PRIVATE sim/mapgen.cpp sim/mapgen_check.cpp)  # the random map generator (docs/map-generator-plan.md)
+target_sources(antanta_sim PRIVATE sim/mapgen_ground.cpp)  # the generator's ground painting (docs/map-generator-plan.md 5.8)
+target_sources(antanta_sim PRIVATE sim/mapgen_hills.cpp)  # the generator's hills and mountains (docs/map-generator-plan.md 5.5)
+target_sources(antanta_sim PRIVATE sim/mapgen_forest.cpp)  # the generator's free deposits and forests (docs/map-generator-plan.md 5.6, 5.7)
+target_sources(antanta_sim PRIVATE sim/mapgen_water.cpp)  # the generator's lakes, sea, coasts and port sites (docs/map-generator-plan.md 5.4)
+target_sources(antanta_sim PRIVATE sim/mapgen_sea.cpp)  # the generator's Sea maps: the water drawn first, the starts fitted to it (docs/map-generator-plan.md 5.1, 5.4)
+target_sources(antanta_sim PRIVATE sim/mapgen_land.cpp)  # the generator's land maps: a kind of country drawn first, the starts fitted to it (docs/map-generator-plan.md 5.1)
 target_link_libraries(antanta_sim PUBLIC antanta_formats PRIVATE antanta_engine_rules)
 # The simulation's sin, cos, tan, atan2 and acos (sim/dmath.hpp, docs/determinism.md): fdlibm 5.3 from netlib, the
 # files unmodified, as C with no warnings. Only + - * / and sqrt, so the results are the same on every PC and in the
@@ -205,6 +212,7 @@ target_link_libraries(antanta_platform PUBLIC antanta_formats SDL3::SDL3-static 
 
 add_executable(mapviewer apps/mapviewer/main.cpp)
 target_link_libraries(mapviewer PRIVATE antanta_platform antanta_render antanta_engine_rules)
+target_link_libraries(mapviewer PRIVATE antanta_sim)  # generated maps from a map code (sim/mapgen.hpp)
 
 # The live renderer (the GameState drawn by the compositor), the debug HUD's logic and the view inputs both the game
 # app and the headless runner make from a camera.

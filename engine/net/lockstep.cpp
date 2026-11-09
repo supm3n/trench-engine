@@ -46,7 +46,8 @@ Actor TopActor(K k) {
         case K::MarketAuto:
         case K::BindGroup:
         case K::FacingOrder:
-        case K::PlusStrike: return Actor::RawArg;
+        case K::PlusStrike:
+        case K::QueueOrder: return Actor::RawArg;
         case K::Rally:
         case K::Act_ba0a0:
         case K::Act_b9fc0:
@@ -71,7 +72,7 @@ bool ChildKind(K k) {
 bool Unnumbered(K k) {
     return k == K::SelectHouses || k == K::AddHouse || k == K::ToggleAdvisor || k == K::MarketAuto ||
            k == K::BindGroup || k == K::FacingOrder || k == K::ReleaseHouseUnit || k == K::HouseDepth ||
-           k == K::NetControl || k == K::PlusStrike;
+           k == K::NetControl || k == K::PlusStrike || k == K::QueueOrder;
 }
 
 }  // namespace

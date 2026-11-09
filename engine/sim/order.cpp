@@ -53,6 +53,27 @@ void Order_LogMove(GameState& s, std::uint32_t parent, std::uint8_t player, cons
 
 namespace {
 
+// Our rules (docs/bugs.md B90): one spacing for the whole square, that of the type most units have (on a tie the
+// larger), so mixed types stand on one grid; the original takes each unit's own size for the spacing and the
+// square's corner, which lays every type on its own grid of its own width. The jitter stays each unit's own.
+std::int32_t SpreadGrid(const GameState& s, std::uint8_t player, const std::vector<Unit*>& list) {
+    std::array<std::uint32_t, 40> per_type{};
+    std::array<std::int32_t, 40> size{};  // a type's size from its first unit's record (merged units: their own)
+    for (std::uint8_t k = 0; k < 40; ++k) size[k] = s.unit_types[s.players[player].nation][k].size;
+    std::uint8_t best = 0;
+    for (const Unit* u : list) {
+        if (per_type[u->type % 40]++ == 0) size[u->type % 40] = Unit_Type(s, player, *u).size;
+    }
+    for (std::uint8_t k = 0; k < 40; ++k) {
+        const std::int32_t sk = size[k];
+        const std::int32_t sb = size[best];
+        if (per_type[k] > per_type[best] || (per_type[k] == per_type[best] && per_type[k] != 0 && sk > sb)) {
+            best = k;
+        }
+    }
+    return size[best];
+}
+
 
 
 void UI_OrderMoveSpread(GameState& s, std::uint8_t player, const std::vector<Unit*>& list, float x, float y) {
@@ -66,27 +87,7 @@ void UI_OrderMoveSpread(GameState& s, std::uint8_t player, const std::vector<Uni
     }
     const auto colsu = static_cast<std::uint32_t>(cols & 0xffff);
     const float colsf = static_cast<float>(colsu);
-    // Our rules (docs/bugs.md B90): one spacing for the whole square, that of the type most units have (on a tie the
-    // larger), so mixed types stand on one grid; the original takes each unit's own size for the spacing and the
-    // square's corner, which lays every type on its own grid of its own width. The jitter stays each unit's own.
-    std::int32_t grid = -1;
-    if (!s.original_rules) {
-        std::array<std::uint32_t, 40> per_type{};
-        std::array<std::int32_t, 40> size{};  // a type's size from its first unit's record (merged units: their own)
-        for (std::uint8_t k = 0; k < 40; ++k) size[k] = s.unit_types[s.players[player].nation][k].size;
-        std::uint8_t best = 0;
-        for (const Unit* u : list) {
-            if (per_type[u->type % 40]++ == 0) size[u->type % 40] = Unit_Type(s, player, *u).size;
-        }
-        for (std::uint8_t k = 0; k < 40; ++k) {
-            const std::int32_t sk = size[k];
-            const std::int32_t sb = size[best];
-            if (per_type[k] > per_type[best] || (per_type[k] == per_type[best] && per_type[k] != 0 && sk > sb)) {
-                best = k;
-            }
-        }
-        grid = size[best];
-    }
+    const std::int32_t grid = s.original_rules ? -1 : SpreadGrid(s, player, list);  // B90
     for (std::uint32_t i = 0; i < list.size(); ++i) {
         Unit& u = *list[i];
         const std::int32_t size = Unit_Type(s, player, u).size;
@@ -400,6 +401,7 @@ void UI_OrderSelected(GameState& s, const Command& c, const Click& click) {
     for (const UnitRef& sel : c.units) {
         Unit* u = Unit_Find(s, UnitRef{player, sel.id, sel.serial});
         if (u == nullptr) continue;
+        u->order_queue.clear();  // ours (B317): a right click without Shift replaces the queue (empty in the original)
         Unit_ClearFutureTransporter(*u);
         u->field_0e4 = 0;
         if (!fire) {
@@ -464,6 +466,140 @@ void UI_OrderSelected(GameState& s, const Command& c, const Click& click) {
         }
         case 7: UI_Board(s, player, list, click.target.player, *Unit_Find(s, click.target), parent); break;
         default: break;
+    }
+}
+
+
+
+
+
+bool Unit_Busy(const Unit& u) {
+    const bool field = u.work == 10 || u.work == 11;
+    return u.is_stopped == 0 || !u.path.empty() || u.has_attack_unit || u.has_house_attack || u.field_0bc != 0 ||
+           u.field_107 != 0 || u.field_160 != 0 || (u.work != 0xff && !field);
+}
+
+
+
+
+
+bool OrderQueue_Take(GameState& s, std::uint8_t p, Unit& u, const Unit::QueuedOrder& q) {
+    House* h = q.kind == 1 || q.kind == 2 ? House_Find(s, q.house) : nullptr;
+    Unit* t = q.kind == 4 || q.kind == 7 ? Unit_Find(s, q.unit) : nullptr;
+    if ((q.kind == 1 || q.kind == 2) && (h == nullptr || h->is_destroyed != 0)) return false;
+    if ((q.kind == 4 || q.kind == 7) && (t == nullptr || t->is_deleted != 0)) return false;
+    if (q.kind == 1 && h->field_020 == 0 && h->hp >= static_cast<float>(h->max_hp) &&
+        static_cast<std::uint8_t>(h->capacity - h->units_inside) == 0) {
+        return false;
+    }
+    if (q.kind == 7 && (t == &u || !Transport_CanUnload(s, *t) || !Unit_MayBoard(s, p, u, *t))) return false;
+    Unit_ClearFutureTransporter(u);
+    u.field_0e4 = 0;
+    u.field_07c = 0;
+    if (q.kind == 2 || q.kind == 4) {
+        u.field_142 = 0;
+        u.field_006 = 1;
+    } else if (u.field_006 != 0) {
+        CancelAttackForMove(s, p, u);
+        u.field_142 = Unit_Type(s, p, u).is_air != 0 ? 65000 : 300;
+        u.field_006 = 0;
+    }
+    switch (q.kind) {
+        case 1: Worker_SendToHouse(s, p, u, q.house.slot, 0); break;
+        case 2:
+            if (u.field_116 == 4) u.field_116 = 0xff;
+            TUnit_AttackHouse(s, p, u, u, q.house.player, q.house.slot, 0, 0);
+            break;
+        case 4:
+            s.flag_8ef4d6 = 1;
+            TUnit_OnAttackedBy(s, p, u, q.unit.player, *t, 0);
+            t->field_141 = 0xc;
+            break;
+        case 7: Transport_Board(s, p, u, q.unit.player, *t, true); break;
+        default:
+            u.field_0bc = 0;
+            TUnit_OrderMove(s, p, u, q.x, q.y, 1);
+            break;
+    }
+    return true;
+}
+
+// Our rules (docs/bugs.md B317): queue_order, Shift + right click. args: player, world x, world y (as ui_order's),
+// the click kind, the target (a unit for kinds 4 and 7, a house for 1 and 2). The point is raised by the ground of
+
+// point. Per selected unit outside a formation group (groups keep the original's orders): an aircraft in flight takes
+// the order at once (it circles and never ends a leg), so does a unit that has nothing to do (Unit_Busy) and no
+// queue; any other appends it, up to kOrderQueueMax. A move gives each unit its place in the selection's square
+// (UI_OrderMoveSpread's, one spacing, B90) without the jitter: the queue reads no random number. Nothing under
+// original_rules (the app sends a plain right click there).
+void Order_ApplyQueue(GameState& s, const Command& c) {
+    if (s.original_rules || c.args.size() != 5) return;
+    const auto player = static_cast<std::uint8_t>(c.args[0].raw & 0xff);
+    if (player >= s.players.size()) return;
+    const auto px = static_cast<std::int32_t>(c.args[1].raw), py = static_cast<std::int32_t>(c.args[2].raw);
+    const float fx = static_cast<float>(px) + (px < 0 ? 4294967296.0f : 0.0f);
+    const float fy0 = static_cast<float>(py) + (py < 0 ? 4294967296.0f : 0.0f);
+    const Cell cell = PickCell(s.map, fx, fy0);
+    if (cell.x < 0 || cell.y < 0 || cell.x >= s.map.width || cell.y >= s.map.height) return;
+    const std::size_t ci = static_cast<std::size_t>(cell.y) * s.map.width + static_cast<std::size_t>(cell.x);
+    const std::int32_t y = py + s.map.heights[ci];
+    Unit::QueuedOrder q;
+    q.kind = static_cast<std::uint8_t>(c.args[3].raw & 0xff);
+    q.x = fx, q.y = static_cast<float>(y) + (y < 0 ? 4294967296.0f : 0.0f), q.px = px, q.py = py;
+    const OrderArg& a = c.args[4];
+    if ((q.kind == 1 || q.kind == 2) && a.tag == OrderArg::Tag::House) {
+        const House* h = House_Find(s, HouseRef{a.house.player, a.house.slot, 0});
+        const bool own = a.house.player == player;
+        if (h != nullptr && h->is_destroyed == 0 && (q.kind == 1) == own &&
+            (own || IsEnemy(s, player, a.house.player))) {
+            q.house = HouseRef{a.house.player, a.house.slot, h->generation};
+        } else {
+            q.kind = 0;
+        }
+    } else if ((q.kind == 4 || q.kind == 7) && a.tag == OrderArg::Tag::Unit) {
+        for (std::size_t k = 0; k < s.players.size() && q.unit.player == 0xff; ++k) {  // the O line has no player
+            const UnitRef r{static_cast<std::uint8_t>(k), a.unit.id, a.unit.serial};
+            const Unit* t = Unit_Find(s, r);
+            if (t != nullptr && t->is_deleted == 0) q.unit = r;
+        }
+        const Unit* t = Unit_Find(s, q.unit);
+        if (t == nullptr || (q.kind == 7) != (q.unit.player == player) ||
+            (q.kind == 7 && t->type != 0x11 && t->type != 0x18)) {
+            q.kind = 0, q.unit = UnitRef{};
+        }
+    } else {
+        q.kind = 0;
+    }
+    std::vector<Unit*> list;
+    for (const UnitRef& sel : c.units) {
+        Unit* u = Unit_Find(s, UnitRef{player, sel.id, sel.serial});
+        if (u == nullptr || u->is_deleted != 0 || u->in_group) continue;
+        list.push_back(u);
+    }
+    if (list.empty()) return;
+    std::reverse(list.begin(), list.end());
+    Event_CommandVoice(s, player, c.units.front());
+    const std::uint32_t cols = static_cast<std::uint32_t>(Ftol(std::sqrt(static_cast<double>(list.size())))) & 0xffff;
+    const std::int32_t grid = SpreadGrid(s, player, list);
+    for (std::uint32_t i = 0; i < list.size(); ++i) {
+        Unit& u = *list[i];
+        Unit::QueuedOrder e = q;
+        if (e.kind == 0 && list.size() > 1) {  // UI_OrderMoveSpread's square without its jitter
+            const double t = 2 * grid + 1, g1 = grid + 1;
+            const float half = static_cast<float>(0.5 * (Unit_Type(s, player, u).size + 1));
+            const double m = g1 * static_cast<float>(cols);
+            const auto row = static_cast<double>(i / cols), col = static_cast<double>(i % cols);
+            e.x = static_cast<float>(((static_cast<double>(half) + q.x) + col * t) - m);
+            e.y = static_cast<float>(((static_cast<double>(half) + q.y) + row * t) - m);
+        }
+        const bool air = Unit_Type(s, player, u).is_air != 0;
+        if (air && !Flying(s, player, u)) continue;
+        if (air || (u.order_queue.empty() && !Unit_Busy(u))) {
+            u.order_queue.clear();
+            OrderQueue_Take(s, player, u, e);
+        } else if (u.order_queue.size() < kOrderQueueMax) {
+            u.order_queue.push_back(e);
+        }
     }
 }
 
@@ -661,7 +797,12 @@ bool Order_ApplyButton(GameState& s, const Command& c) {
     s.log_moves = true, s.log_parent = parent ? s.order_seq : 0;
     switch (c.kind) {
         case K::GroupCreate: UI_GroupCreate(s, player, c.units); break;
-        case K::Stop: Order_Stop(s, player, c.units); break;
+        case K::Stop:
+            for (const UnitRef& sel : c.units) {  // ours (B317): Stop clears the queue (empty in the original)
+                if (Unit* u = Unit_Find(s, UnitRef{player, sel.id, sel.serial})) u->order_queue.clear();
+            }
+            Order_Stop(s, player, c.units);
+            break;
         case K::GroupDismiss: Order_GroupDismiss(s, player, c.units); break;
         default:
             for (const UnitRef& sel : c.units) {
@@ -786,6 +927,10 @@ void Order_Apply(GameState& s, const Command& c, std::span<const Command> all) {
             Strike_Call(s, static_cast<std::uint8_t>(c.args[0].raw), static_cast<std::uint8_t>(c.args[1].raw & 0xff),
                         i32(2), i32(3), i32(4), i32(5));
         }
+        return;
+    }
+    if (c.kind == Command::Kind::QueueOrder) {  // ours (docs/bugs.md B317): Shift + right click, no O line
+        Order_ApplyQueue(s, c);
         return;
     }
     if (c.kind == Command::Kind::SelectSummary) {
@@ -939,6 +1084,27 @@ void Order_Apply(GameState& s, const Command& c, std::span<const Command> all) {
     }
     UI_OrderSelected(s, c, click);
     s.log_moves = false;
+}
+
+bool Unit_RouteBusy(const Unit& u) { return !u.order_queue.empty() || Unit_Busy(u); }
+
+// Our rules (docs/bugs.md B317), in the unit's update before its MoveFunc: a unit with queued orders that has nothing
+// to do takes the next one (one whose target is gone is dropped and the one after it taken). Entering a house or a
+// transport ends the route, as does joining a formation group (groups keep the original's orders) or a player the
+// computer took over; a dead unit drops it.
+void OrderQueue_Next(GameState& s, std::uint8_t p, Unit& u) {
+    if (u.order_queue.empty()) return;
+
+    if (s.original_rules || u.in_group || u.is_deleted != 0 || u.work == 3 || u.work == 0x14 || !Player_IsYou(s, p)) {
+        u.order_queue.clear();
+        return;
+    }
+    if (Unit_Busy(u)) return;
+    while (!u.order_queue.empty()) {
+        const Unit::QueuedOrder q = u.order_queue.front();
+        u.order_queue.erase(u.order_queue.begin());
+        if (OrderQueue_Take(s, p, u, q)) return;
+    }
 }
 
 }  // namespace antanta::sim

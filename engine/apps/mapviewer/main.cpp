@@ -1,6 +1,7 @@
 // Map viewer: the original's isometric view of one map (render/iso), or the flat top-down overview (render/topdown).
-// Desktop: mapviewer <map name> [--game <game folder>] [--at <col> <row>] [--screenshot out.png] [--topdown]
-//                    [--bench <frames>]
+// Desktop: mapviewer <map name or map code> [--game <game folder>] [--at <col> <row>] [--screenshot out.png]
+//                    [--topdown] [--bench <frames>]
+//          A map code (docs/map-generator.md, v1-N-2-land-summer-3F9A2C71) shows the generated map.
 //          The game folder defaults to the ANTANTA_GAME_DIR environment variable. --at is the scroll position
 //          (1 col = 96 px, 1 row = 24 px). --screenshot writes the first frame and quits. --bench scrolls through
 //          <frames> frames (a static redraw every frame), logs the timings and quits.
@@ -27,6 +28,7 @@
 #include "platform/files.hpp"
 #include "render/iso.hpp"
 #include "render/topdown.hpp"
+#include "sim/mapgen.hpp"
 
 using namespace antanta;
 
@@ -90,9 +92,19 @@ void zoom_at(App& app, float factor, float sx, float sy) {
 
 bool load_map(App& app, const std::string& map_file, std::string* error) {
     const GameFileLoader load = loader(app);
-    auto file = load("Maps/" + map_file, error);
-    if (!file) return false;
-    auto map = parse_map(*file, error);
+    std::optional<MapData> map;
+    if (const auto gen = sim::MapGen_ParseCode(map_file, nullptr)) {  // a generated map (docs/map-generator.md)
+        sim::MapGenReport report;  // the report of docs/map-generator-plan.md 5.12 on stdout
+        map = sim::MapGen_Build(*gen, error, &report);
+        if (map) {
+            sim::MapGen_LookNumbers(*map, &report);
+            std::printf("%s", sim::MapGen_ReportText(*gen, report, 0.0, 0.0).c_str());
+        }
+    } else if (auto file = load("Maps/" + map_file, error)) {
+        map = parse_map(*file, error);
+    } else {
+        return false;
+    }
     if (!map) {
         *error = map_file + ": " + *error;
         return false;
@@ -233,7 +245,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv) {
     }
     SDL_SetTextureScaleMode(app->iso, SDL_SCALEMODE_NEAREST);
     if (!map_name.empty()) {
-        if (map_name.size() < 4 || SDL_strcasecmp(map_name.c_str() + map_name.size() - 4, ".dat") != 0) {
+        if ((map_name.size() < 4 || SDL_strcasecmp(map_name.c_str() + map_name.size() - 4, ".dat") != 0) &&
+            !sim::MapGen_ParseCode(map_name, nullptr)) {
             map_name += ".dat";
         }
         std::string error;

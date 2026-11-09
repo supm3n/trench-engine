@@ -39,10 +39,13 @@ constexpr std::uint8_t kMagic[16] = {'A', 'N', 'T', 'A', 'N', 'T', 'A', ' ', 'S'
 // SIM version 16 (2026-10-23): each player's call-in strike cooldowns (Player::plus_strike_ready, 5 x u32) and recon
 // flight (plus_recon_x, plus_recon_y, plus_recon_end) at the end (Entente Engine Plus); older files load with 0 (every
 // strike ready, no recon).
+// SIM version 17 (2026-11-04, B317): per player the Shift-click order queue of every unit slot at the end
+// (Unit::order_queue, our rules); older files load with none.
 // SETU version 2 (2026-10-22): the setup's Plus choice at the end (SkirmishSetup::plus); older files load as Classic.
 // LUA version 1 (2026-10-18, slice M6): a Lua mission's globals, one string of Lua lines.
-constexpr std::uint32_t kInfoVersion = 1, kViewVersion = 1, kSetupVersion = 2, kSimVersion = 16, kLuaVersion = 1,
-                        kNetVersion = 1;
+// GRND version 1 (2026-11-04, slice G7): a generated map, whole (OwnSaveMeta::ground), zlib-compressed as SIM.
+constexpr std::uint32_t kInfoVersion = 1, kViewVersion = 1, kSetupVersion = 2, kSimVersion = 17, kLuaVersion = 1,
+                        kNetVersion = 1, kGroundVersion = 1;
 
 // ---- the two walkers ----
 
@@ -535,6 +538,16 @@ void game_state(A& a, T& s, std::uint32_t version = kSimVersion) {
             a.i32(p.plus_recon_x), a.i32(p.plus_recon_y), a.u32(p.plus_recon_end);
         }
     }
+    if (version >= 17) {  // B317: the Shift-click order queue of every unit slot (our rules)
+        for (auto& p : s.players) {
+            for (auto& u : p.unit_slots) {
+                a.vec(u.order_queue, [&](auto& e) {
+                    a.u8(e.kind), a.f32(e.x), a.f32(e.y), a.i32(e.px), a.i32(e.py), unit_ref(a, e.unit);
+                    house_ref(a, e.house);
+                });
+            }
+        }
+    }
 }
 
 template <class A, class T>
@@ -569,6 +582,43 @@ void net_seats(A& a, T& n) {
     a.vec(n.seats, [&](auto& s) {
         a.u8(s.slot), a.u8(s.player), a.str(s.name), a.u64(s.token_check), a.u8(s.left), a.u8(s.ai);
     });
+}
+
+// A generated map (chunk GRND): every field of MapData, in its order.
+template <class A, class T>
+void map_house(A& a, T& h) {
+    a.i32(h.player), a.i32(h.cell_x), a.i32(h.cell_y), a.u8(h.type), a.u16(h.build_state), a.f32(h.hp);
+    a.u8(h.field_1c), a.u32(h.port_side);
+}
+
+template <class A, class T>
+void map_data(A& a, T& m) {
+    a.i32(m.width), a.i32(m.height);
+    a.vec(m.cells, [&](auto& c) {
+        a.u8(c.height), a.u16(c.tile), a.u8(c.shade), a.u8(c.unknown4), words(a, c.subtile), a.u16(c.object);
+    });
+    a.vec(m.player_names, [&](auto& n) { a.str(n); });
+    a.vec(m.player_nations, [&](auto& v) { a.u8(v); });
+    a.vec(m.player_bytes29, [&](auto& v) { a.u8(v); });
+    words(a, m.house_counts), words(a, m.unit_counts);
+    a.vec(m.houses, [&](auto& h) { map_house(a, h); });
+    a.vec(m.units,
+          [&](auto& u) { a.i32(u.player), a.f32(u.world_x), a.f32(u.world_y), a.u16(u.type), a.u8(u.orient_plus1); });
+    a.i32(m.extra_unit_records);
+    a.vec(m.decorations, [&](auto& d) {
+        a.u8(d.type), a.u16(d.f01), a.f32(d.f03), a.u8(d.f07), a.f32(d.f08), a.f32(d.f0c), a.u16(d.f10);
+        a.u16(d.f12), a.u16(d.f14), a.u8(d.f16), a.u8(d.f17), a.f32(d.world_x), a.f32(d.world_y), bytes8(a, d.rest);
+    });
+    a.vec(m.obstacle_grid, [&](auto& v) { a.u16(v); });
+    a.vec(m.routes, [&](auto& r) {
+        a.u16(r.v);
+        a.vec(r.lists, [&](auto& l) { a.vec(l, [&](auto& v) { a.u16(v); }); });
+    });
+    a.vec(m.neutral_houses, [&](auto& h) { map_house(a, h); });
+    a.u16(m.ignored_unit_records), a.u16(m.special_capacity);
+    a.vec(m.specials,
+          [&](auto& sp) { a.u8(sp.kind), a.u16(sp.x), a.u16(sp.y), a.f32(sp.f_a), a.f32(sp.f_b), a.u8(sp.b); });
+    a.vec(m.port_sites, [&](auto& v) { a.u32(v); });
 }
 
 // ---- chunks ----
@@ -672,6 +722,33 @@ bool read_info(const std::vector<Chunk>& chunks, OwnSaveInfo* out, std::string* 
     return read_chunk(*k, kInfoVersion, [&](Reader& r) { info(r, *out); }, error);
 }
 
+// Chunk GRND: the raw size, the zlib stream of map_data; the cells must fill the map.
+bool read_ground(const Chunk& k, MapData* m, std::string* error) {
+    if (k.version > kGroundVersion) {
+        *error = "This save was made by a newer version of Antanta (part GRND version " + std::to_string(k.version) +
+                 "; this version reads up to " + std::to_string(kGroundVersion) + ").";
+        return false;
+    }
+    Cursor c{k.payload};
+    const std::uint32_t raw_size = c.u32();
+    std::string inflate_error;
+    std::optional<Bytes> raw = c.ok ? inflate_exact(k.payload.subspan(4), raw_size, &inflate_error) : std::nullopt;
+    if (!raw) {
+        *error = "This save file is damaged (the generated map does not unpack" +
+                 (inflate_error.empty() ? std::string() : ": " + inflate_error) + ").";
+        return false;
+    }
+    if (!read_chunk(Chunk{k.tag, k.version, *raw}, kGroundVersion, [&](Reader& r) { map_data(r, *m); }, error))
+        return false;
+    if (m->width <= 0 || m->height <= 0 || m->width > 4096 || m->height > 4096 ||
+        m->cells.size() != static_cast<std::size_t>(m->width) * static_cast<std::size_t>(m->height)) {
+        *error = "This save file is damaged (the generated map has " + std::to_string(m->cells.size()) + " cells for " +
+                 std::to_string(m->width) + " x " + std::to_string(m->height) + ").";
+        return false;
+    }
+    return true;
+}
+
 }  // namespace
 
 bool OwnSave_IsOwn(ByteSpan file) {
@@ -689,7 +766,7 @@ OwnSavePending OwnSave_Prepare(const GameState& s, const OwnSaveMeta& meta) {
     Bytes& out = p.head;
     out.assign(kMagic, kMagic + sizeof kMagic);
     put_u32(out, kOwnSaveFormat);
-    put_u32(out, 3 + (meta.setup ? 1 : 0) + (meta.lua ? 1 : 0) + (meta.net ? 1 : 0));
+    put_u32(out, 3 + (meta.setup ? 1 : 0) + (meta.ground ? 1 : 0) + (meta.lua ? 1 : 0) + (meta.net ? 1 : 0));
     Bytes part;
     Writer w{part};
     info(w, in);
@@ -706,6 +783,10 @@ OwnSavePending OwnSave_Prepare(const GameState& s, const OwnSaveMeta& meta) {
     // same state, so a save, load and save again is byte for byte the same file).
     Writer raw{p.raw};
     game_state(raw, s);
+    if (meta.ground) {
+        Writer ground{p.ground};
+        map_data(ground, *meta.ground);
+    }
     if (meta.lua) {
         part.clear();
         w.str(*meta.lua);
@@ -720,16 +801,33 @@ OwnSavePending OwnSave_Prepare(const GameState& s, const OwnSaveMeta& meta) {
     return p;
 }
 
-Bytes OwnSave_Finish(const OwnSavePending& p) {
-    uLongf packed_size = compressBound(static_cast<uLong>(p.raw.size()));
+namespace {
+
+// The raw size, then the zlib stream (compress2 at a fixed level: the same bytes for the same input). Empty when zlib
+// fails.
+Bytes packed_part(const Bytes& raw) {
+    uLongf packed_size = compressBound(static_cast<uLong>(raw.size()));
     Bytes packed(packed_size);
-    if (compress2(packed.data(), &packed_size, p.raw.data(), static_cast<uLong>(p.raw.size()), 6) != Z_OK) return {};
+    if (compress2(packed.data(), &packed_size, raw.data(), static_cast<uLong>(raw.size()), 6) != Z_OK) return {};
     packed.resize(packed_size);
-    Bytes sim;
-    put_u32(sim, static_cast<std::uint32_t>(p.raw.size()));
-    sim.insert(sim.end(), packed.begin(), packed.end());
+    Bytes out;
+    put_u32(out, static_cast<std::uint32_t>(raw.size()));
+    out.insert(out.end(), packed.begin(), packed.end());
+    return out;
+}
+
+}  // namespace
+
+Bytes OwnSave_Finish(const OwnSavePending& p) {
+    const Bytes sim = packed_part(p.raw);
+    if (sim.empty()) return {};
     Bytes out = p.head;
     put_chunk(out, "SIM ", kSimVersion, sim);
+    if (!p.ground.empty()) {
+        const Bytes ground = packed_part(p.ground);
+        if (ground.empty()) return {};
+        put_chunk(out, "GRND", kGroundVersion, ground);
+    }
     out.insert(out.end(), p.tail.begin(), p.tail.end());
     return out;
 }
@@ -772,6 +870,12 @@ bool OwnSave_Read(ByteSpan file, GameState* s, OwnSaveMeta* meta, std::string* e
         if (!read_chunk(*k, kNetVersion, [&](Reader& r) { net_seats(r, n); }, error)) return false;
         meta->net = std::move(n);
     }
+    meta->ground.reset();
+    if (const Chunk* k = find_chunk(chunks, "GRND")) {
+        MapData m;
+        if (!read_ground(*k, &m, error)) return false;
+        meta->ground = std::make_shared<const MapData>(std::move(m));
+    }
     meta->lua.reset();
     if (const Chunk* k = find_chunk(chunks, "LUA ")) {
         std::string lua;
@@ -806,6 +910,7 @@ bool OwnSave_Read(ByteSpan file, GameState* s, OwnSaveMeta* meta, std::string* e
     s->deselected.clear(), s->events.clear(), s->gas_clouds.clear();
     s->flow_fields.clear(), s->flow_open.clear(), s->flow_weight.clear(), s->flow_log.clear();  // the route fields'
     s->flow_grid_gen = 0xffffffff;                                                              // cache, built anew
+    s->land_region.clear();  // Land_Region's cache, built anew
     if (!read_chunk(sim, kSimVersion, [&](Reader& r) { game_state(r, *s, k->version); }, error)) return false;
 
     const std::uint16_t index = s->rng_index;

@@ -542,6 +542,72 @@ std::vector<Command> right_click(const sim::GameState& s, const WorldGraphics* g
     return out;
 }
 
+std::vector<Command> queue_click(const sim::GameState& s, const WorldGraphics* g, const Selection& sel, ViewPos pos,
+                                 int sx, int sy, std::string* what) {
+    const std::uint8_t p = sel.player;
+    if (s.original_rules || p >= s.players.size() || sel.units.empty()) return {};
+    bool busy = false;
+    std::size_t full = 0, found = 0;
+    for (const sim::UnitRef& r : sel.units) {
+        const sim::Unit* u = sim::Unit_Find(s, r);
+        if (u == nullptr) continue;
+        if (u->in_group) return {};  // a formation group: a plain right click (groups keep the original's orders)
+        busy = busy || sim::Unit_RouteBusy(*u);
+        full += u->order_queue.size() >= sim::kOrderQueueMax;
+        ++found;
+    }
+    if (!busy) return {};
+    const RightClickTarget t = right_click_target(s, g, p, pos, sx, sy);
+    if (!t.on_map || (!t.house && !t.target && t.obj >= 0x2580 && t.obj <= 11000)) return {};  // fields, map objects
+    std::uint32_t kind = 0;
+    OrderArg target;
+    target.tag = OrderArg::Tag::NoUnit;
+    std::string name = "move";
+    if (t.house && t.house->player == p) {
+        kind = 1, target = house_arg(*t.house);
+        name = "to own " + house_name(s.players[p].houses[t.house->slot].type);
+    } else if (t.house && sim::IsEnemy(s, p, t.house->player)) {
+        kind = 2, target = house_arg(*t.house);
+        name = "attack " + house_name(s.players[t.house->player].houses[t.house->slot].type);
+    } else if (t.target) {
+        kind = 4, target = unit_arg(*t.target);
+        name = "attack " + unit_name(sim::Unit_Find(s, *t.target)->type);
+    } else if (const auto tr = transport_at(s, g, pos, sx, sy, p)) {
+        kind = 7, target = unit_arg(*tr);
+        name = "board " + unit_name(sim::Unit_Find(s, *tr)->type);
+    }
+    Command c;
+    c.kind = Command::Kind::QueueOrder;
+    c.player = p;
+    c.args = {raw(p), raw(static_cast<std::uint32_t>(t.w.x)), raw(static_cast<std::uint32_t>(t.w.y)), raw(kind),
+              target};
+    c.units = sel.units;
+    *what =
+        full == found ? "the route is full (" + std::to_string(sim::kOrderQueueMax) + " points)" : "queued: " + name;
+    return {c};
+}
+
+OrderRoute order_route(const sim::GameState& s, const Selection& sel) {
+    OrderRoute out;
+    std::size_t drawn = 0;
+    for (const sim::UnitRef& r : sel.units) {
+        const sim::Unit* u = sim::Unit_Find(s, r);
+        if (u == nullptr || u->order_queue.empty()) continue;
+        std::array<float, 2> at = unit_screen_point(*u, ViewPos{});
+        for (const sim::Unit::QueuedOrder& e : u->order_queue) {
+            std::array<float, 2> to{static_cast<float>(e.px), static_cast<float>(e.py)};
+            if (e.kind == 4 || e.kind == 7) {
+                if (const sim::Unit* t = sim::Unit_Find(s, e.unit)) to = unit_screen_point(*t, ViewPos{});
+            }
+            if (drawn < kRouteUnits) out.lines.push_back({at[0], at[1], to[0], to[1]});
+            if (std::find(out.marks.begin(), out.marks.end(), to) == out.marks.end()) out.marks.push_back(to);
+            at = to;
+        }
+        ++drawn;
+    }
+    return out;
+}
+
 std::vector<Command> stop_order(const Selection& sel) {
     if (sel.units.empty()) return {};
     Command c;

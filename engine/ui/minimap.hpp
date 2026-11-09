@@ -133,6 +133,8 @@ struct MinimapPalette {
     std::vector<std::array<std::uint8_t, 3>> tiles;
     std::array<std::uint32_t, 8> players{};  // 0xRRGGBB
 };
+// The ground's part: the bytes at the head of LandTextures.dat (u16 n, n x 3 bytes), as many as the file holds.
+MinimapPalette minimap_ground_palette(ByteSpan land_textures);
 
 
 // ftol(W * py * sy + px * sx); map objects 101..999 0xE4F6; a standing house its player's colour; else water (the
@@ -148,6 +150,10 @@ std::vector<std::uint32_t> minimap_static(const sim::GameState& s, const Minimap
 
 
 Minimap save_preview(const sim::GameState& s, const MinimapPalette& pal, bool tile_slip = false);
+// Ours (slice G7, docs/map-generator-plan.md 4.3): the same picture of a map before a game is started from it (the
+// setup screen's preview of a generated map): the cells as the start puts them in the state (an object's high bit
+// dropped, the mine sites as it lists them, the obstacle grid for water), then save_preview.
+Minimap map_preview(const MapData& map, const MinimapPalette& pal);
 
 
 

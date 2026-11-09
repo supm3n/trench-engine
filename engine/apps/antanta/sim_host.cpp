@@ -25,6 +25,7 @@ struct SimHost::Stash {
     decltype(sim::GameState::flow_open) flow_open, flow_weight;
     decltype(sim::GameState::flow_log) flow_log;
     decltype(sim::GameState::flow_stamp) flow_stamp;
+    decltype(sim::GameState::land_region) land_region;
     decltype(sim::GameState::unit_cells) unit_cells;
     decltype(sim::GameState::house_cells) house_cells;
     decltype(sim::GameState::house_depth_maps) house_depth_maps;
@@ -52,6 +53,7 @@ struct SimHost::Stash {
         std::swap(s.flow_weight, flow_weight);
         std::swap(s.flow_log, flow_log);
         std::swap(s.flow_stamp, flow_stamp);
+        std::swap(s.land_region, land_region);
         std::swap(s.unit_cells, unit_cells);
         std::swap(s.house_cells, house_cells);
         std::swap(s.house_depth_maps, house_depth_maps);

@@ -288,6 +288,9 @@ struct NetChoices {
     std::string resume;          // slice MP9: Join on a saved game's row: that save, hosted again
 };
 const NetChoices& frontend_net_choices(const Frontend& f);
+// A typed address with the port added when it has none: "host" and "1.2.3.4" get ":port", an IPv6 address
+// ("::1", "[::1]") gets brackets and ":port"; "host:port" and "[::1]:port" stay as typed.
+std::string frontend_address_with_port(const std::string& typed, std::uint16_t port);
 // A game the app found on this network (net/lan.hpp).
 struct NetGameRow {
     std::string name, map, address;

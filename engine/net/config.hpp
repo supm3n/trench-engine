@@ -10,8 +10,10 @@ namespace antanta::net {
 // The protocol's version: a client and a server of different versions refuse each other at the hello.
 // 2: the map's positions, the speed and a password (MP2); 3: the seats, the game's identity, the autosave interval and
 // a resumed game's save (MP9); 4: the setup's Entente Engine Plus choice (2026-10-22); 5: the Plus call-in strike
-// order plus_strike (2026-10-23).
-inline constexpr std::uint32_t kProtocolVersion = 5;
+// order plus_strike (2026-10-23); 6: the Shift-click order queue_order (2026-11-04, docs/bugs.md B317); 7: the setup's
+// map name may be a generated map's code (2026-11-05, slice G8, docs/map-generator-plan.md 6; the bytes as in 6, but a
+// version 6 machine would look for the code as a map file).
+inline constexpr std::uint32_t kProtocolVersion = 7;
 
 struct NetConfig {
     // The lobby.

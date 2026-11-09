@@ -58,6 +58,13 @@
 //                                      colour 0..7, team 0..8; unlisted slots keep the screen's defaults (slot 0
 //                                      4/0/0/0, slot 1 1/1/1/0, the rest closed)
 //             --seed <n>               the seed of both table fills (default 12345, the recorder's)
+//           Or a map code (docs/map-generator-plan.md, v1-N-4-W-3F9A2C71) in place of the map: the map is
+//           generated (sim/mapgen.hpp) and its hash noted on stderr.
+// --mapgen-report <code> (game dir only): builds the map, prints the report of plan 5.12 and the engine's own check
+//           (MapGen_Verify); with --mapgen-out <file.ppm> also a plan picture (zone rings, water, kit objects).
+// --mapgen-sweep <first seed (hex)> <count> <settings>: builds and checks count codes per setting ("land": both
+//           sizes, 2 to 8 players, summer and winter; or a list like N-4-0,L-8-W), one TSV line each to stdout or
+//           --mapgen-out, a summary on stderr (validity, attempts, first failures, build time p50/p99).
 //           Your advisor switches come from Data/GameInf.txt. Without --orders and --view every house counts as
 //           drawn from the moment it exists (docs/view-dependence.md, the owner's answer 7).
 // --new-mission: the second argument is a mission (.mis, or the setup part of a .mit without its Lua script) and the
@@ -80,9 +87,9 @@
 //           byte (the gate compares them).
 // --save-dir <dir>: where --save-load-at writes (default: the folder of out.tsv).
 // --net-log: the second argument is a network game server's order log (antanta-server --log-dir, net/lockstep.hpp):
-//           the game starts from its setup line on Maps/<its map> (a resumed game, slice MP9: from the save of its R
-//           line) and runs to tick <ticks> with the log's orders, every house
-//           drawn, writing the network game's trace (the tick lines only, MyPlayer as "-", a G line with
+//           the game starts from its setup line on Maps/<its map> or the generated map of its code (slice G8; a
+//           resumed game, slice MP9: from the save of its R line) and runs to tick <ticks> with the log's orders, every
+//           house drawn, writing the network game's trace (the tick lines only, MyPlayer as "-", a G line with
 //           GameState_NetHash) that every player of that game wrote (apps/common/net_game.hpp).
 // --mission-state <file>: after each tick in which a player with mission event blocks had its check (tick % 50 ==
 //           player), a line "<tick> p <p> stage <s> lost <l> result <r> blocks <i>:<done>/<countdown>/<open>/<timer>
@@ -115,6 +122,8 @@
 #include "platform/files.hpp"
 #include "script/lua_manager.hpp"
 #include "script/lua_save.hpp"
+#include "sim/mapgen.hpp"
+#include "sim/mapgen_water.hpp"
 #include "sim/mission.hpp"
 #include "sim/movement.hpp"
 #include "sim/ownsave.hpp"
@@ -399,9 +408,14 @@ int replay_net_log(const std::string& game, const std::string& log_path, const s
     std::string resume;
     if (!net::NetLog_Read(std::string(log->begin(), log->end()), &setup, &frames, &err, &resume))
         return fail(log_path + ": " + err);
-    auto mapfile = load_file(game + "/Maps/" + setup.map, &err);
-    if (!mapfile) return fail(err);
-    auto map = parse_map(*mapfile, &err);
+    std::optional<MapData> map;
+    if (const auto gen = sim::MapGen_ParseCode(setup.map, nullptr)) {  // slice G8: a generated map, built from its code
+        map = sim::MapGen_Build(*gen, &err);
+    } else {
+        auto mapfile = load_file(game + "/Maps/" + setup.map, &err);
+        if (!mapfile) return fail(err);
+        map = parse_map(*mapfile, &err);
+    }
     if (!map) return fail(setup.map + ": " + err);
     std::optional<AiTemplate> tpl;
     if (auto t = load_file(game + "/Data/Template4.tpl", &err)) {
@@ -500,6 +514,193 @@ bool enemies_left(const sim::GameState& s) {
     return false;
 }
 
+// --mapgen-report and --mapgen-sweep (docs/map-generator-plan.md 5.12, 7.3): build maps from codes, check them at
+// both levels (the generator's own rules decide, the engine's code verifies) and print the report.
+int mapgen_mode(const std::string& game, const sim::GameData& data, const std::string& report_code,
+                const std::vector<std::string>& sweep, const std::string& out_path) {
+    std::string err;
+    std::optional<AiTemplate> tpl;
+    if (auto t = load_file(game + "/Data/Template4.tpl", &err)) tpl = parse_ai_template(*t, &err);
+    auto run = [&](const sim::MapGenSettings& g, sim::MapGenReport* r, double* ms, std::string* verify) {
+        const auto t0 = std::chrono::steady_clock::now();
+        auto map = sim::MapGen_Build(g, &err, r);
+        *ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+        if (!map) return false;
+        sim::MapGen_LookNumbers(*map, r);
+        *verify = sim::MapGen_Verify(*map, g, r->layout, data, tpl ? &*tpl : nullptr);
+        return true;
+    };
+    if (!report_code.empty()) {
+        const auto g = sim::MapGen_ParseCode(report_code, &err);
+        if (!g) return fail(report_code + ": " + err);
+        sim::MapGenReport r;
+        double ms = 0;
+        std::string verify;
+        if (!run(*g, &r, &ms, &verify)) {
+            for (std::size_t k = 0; k < r.failed.size(); ++k)
+                std::printf("attempt %zu: %s\n", k + 1, r.failed[k].c_str());
+            return fail(report_code + ": " + err);
+        }
+        // The checks alone, timed once more on the map kept.
+        auto map = sim::MapGen_Build(*g, &err, nullptr);
+        const auto t0 = std::chrono::steady_clock::now();
+        sim::MapGen_Check(*map, *g, r.layout, nullptr);
+        const double check_ms =
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+        std::printf("%sengine check: %s\n", sim::MapGen_ReportText(*g, r, ms, check_ms).c_str(),
+                    verify.empty() ? "passed" : verify.c_str());
+        // The water numbers (slice G6) and the port sites (cells), for the fairness report.
+        std::string sites;
+        for (std::uint32_t v : map->port_sites)
+            sites += " " + std::to_string(v & 0xffff) + "," + std::to_string(v >> 16);
+        if (!sites.empty()) sites = "port sites (cells):" + sites + "\n";
+        std::printf("%s%s", sim::MapGen_WaterStatsText(sim::MapGen_WaterStats(*map, r.layout)).c_str(), sites.c_str());
+        if (!out_path.empty()) {
+            // --mapgen-out with a report: a plan picture (binary PPM, 1 pixel = 32 world pixels, the map's own
+            // shape): the zones (a thin ring at their radius; the ground there is no paler in the game), the
+            // territories' borders, water, trees, stones,
+            // deposits (gold yellow, iron rust, oil black) with a frame per free group (own white, contested
+            // magenta, middle cyan) and the starts. Shows the generator's objects only, no game graphics.
+            const int pw = map->width * 3, ph = map->height * 3 / 4;
+            std::vector<std::uint8_t> px(static_cast<std::size_t>(pw) * ph * 3);
+            auto put = [&](int x, int y, std::uint8_t cr, std::uint8_t cg, std::uint8_t cb) {
+                if (x < 0 || y < 0 || x >= pw || y >= ph) return;
+                std::uint8_t* q = &px[(static_cast<std::size_t>(y) * pw + x) * 3];
+                q[0] = cr, q[1] = cg, q[2] = cb;
+            };
+            for (int y = 0; y < ph; ++y) {
+                for (int x = 0; x < pw; ++x) {
+                    const long wx = x * 32 + 16, wy = y * 32 + 16;
+                    std::uint8_t c[3] = {196, 200, 160};
+                    for (const sim::MapGenZone& z : r.layout.zones) {
+                        const long d2 = (wx - z.x) * (wx - z.x) + (wy - z.y) * (wy - z.y);
+                        if (d2 > 1250L * 1250 && d2 <= 1300L * 1300) c[0] = 150, c[1] = 150, c[2] = 120;
+                    }
+                    put(x, y, c[0], c[1], c[2]);
+                }
+            }
+            const std::vector<std::uint8_t> water = sim::mapgen::WaterCells(*map);
+            for (int cy = 0; cy < map->height; ++cy) {
+                for (int cx = 0; cx < map->width; ++cx) {
+                    const std::size_t i = static_cast<std::size_t>(cy) * map->width + cx;
+                    const int x = (96 * cx + 48 * (cy & 1)) / 32, y = 24 * cy / 32;
+                    const std::uint16_t o = map->cells[i].object;
+                    if (water[i] != 0) put(x, y, 90, 120, 200);
+                    if (!r.layout.territory.empty() && cx + 1 < map->width && cy + 2 < map->height &&
+                        (r.layout.territory[i] != r.layout.territory[i + 1] ||
+                         r.layout.territory[i] != r.layout.territory[i + 2 * static_cast<std::size_t>(map->width)]))
+                        put(x, y, 110, 110, 90);
+                    if (o >= 9000 && o < 9500) put(x, y, 30, 100, 40);
+                    if (o >= 9500 && o < 9600) put(x, y, 120, 120, 120);
+                }
+            }
+            for (int cy = 0; cy < map->height; ++cy) {
+                for (int cx = 0; cx < map->width; ++cx) {
+                    const std::uint16_t o = map->cells[static_cast<std::size_t>(cy) * map->width + cx].object;
+                    if (o < 0x2581 || o > 0x2583) continue;
+                    const int x = (96 * cx + 48 * (cy & 1)) / 32, y = 24 * cy / 32;
+                    for (int dy = -2; dy <= 2; ++dy) {
+                        for (int dx = -2; dx <= 2; ++dx) {
+                            if (o == 0x2582) put(x + dx, y + dy, 240, 200, 0);
+                            if (o == 0x2583) put(x + dx, y + dy, 170, 70, 30);
+                            if (o == 0x2581) put(x + dx, y + dy, 0, 0, 0);
+                        }
+                    }
+                }
+            }
+            for (const sim::MapGenGroup& gr : r.layout.groups) {  // a frame around each free group's deposits
+                const std::uint8_t cr = gr.ring == 3 ? 0 : 255, cg = gr.ring == 2 ? 0 : 255, cb = 255;
+                for (const auto& cell : gr.cells) {
+                    const int x = (96 * cell[0] + 48 * (cell[1] & 1)) / 32, y = 24 * cell[1] / 32;
+                    for (int k = -4; k <= 4; ++k) {
+                        put(x + k, y - 4, cr, cg, cb), put(x + k, y + 4, cr, cg, cb);
+                        put(x - 4, y + k, cr, cg, cb), put(x + 4, y + k, cr, cg, cb);
+                    }
+                }
+            }
+            for (const sim::MapGenZone& z : r.layout.zones) {
+                for (int d = -4; d <= 4; ++d)
+                    put(z.x / 32 + d, z.y / 32, 200, 0, 0), put(z.x / 32, z.y / 32 + d, 200, 0, 0);
+                for (const auto& s : z.sawmills) {  // the sawmill sites: a small blue square
+                    const int x = (96 * s[0] + 48 * (s[1] & 1)) / 32, y = 24 * s[1] / 32;
+                    for (int k = -2; k <= 2; ++k) {
+                        put(x + k, y - 2, 0, 60, 200), put(x + k, y + 2, 0, 60, 200);
+                        put(x - 2, y + k, 0, 60, 200), put(x + 2, y + k, 0, 60, 200);
+                    }
+                }
+            }
+            std::FILE* f = std::fopen(out_path.c_str(), "wb");
+            if (f == nullptr) return fail("cannot write " + out_path);
+            std::fprintf(f, "P6\n%d %d\n255\n", pw, ph);
+            std::fwrite(px.data(), 1, px.size(), f);
+            std::fclose(f);
+        }
+        return verify.empty() ? 0 : 1;
+    }
+    // <first seed> <count> <settings>: settings "land" (both sizes, 2 to 8 players, summer and winter) or a comma list
+    // of size-players-switches ("N-4-0,L-8-W").
+    const auto first = static_cast<std::uint32_t>(std::strtoul(sweep[0].c_str(), nullptr, 16));
+    const int count = std::atoi(sweep[1].c_str());
+    std::vector<std::string> sets;
+    if (sweep[2] == "land") {
+        for (const char* size : {"N", "L"}) {
+            for (int p = 2; p <= 8; ++p) {
+                for (const char* sw : {"0", "W"})
+                    sets.push_back(std::string(size) + "-" + std::to_string(p) + "-" + sw);
+            }
+        }
+    } else {
+        sets = split(sweep[2], ',');
+    }
+    std::FILE* out = out_path.empty() ? stdout : std::fopen(out_path.c_str(), "wb");
+    if (out == nullptr) return fail("cannot write " + out_path);
+    std::fputs(sim::MapGen_ReportTsvHead().c_str(), out);
+    int maps = 0, first_ok = 0, invalid = 0, verify_bad = 0;
+    std::map<int, int> attempts;
+    std::map<std::string, int> first_fail;
+    std::vector<double> times;
+    for (const std::string& set : sets) {
+        for (int k = 0; k < count; ++k) {
+            char code[64];
+            std::snprintf(code, sizeof code, "v1-%s-%08X", set.c_str(), first + static_cast<std::uint32_t>(k));
+            const auto g = sim::MapGen_ParseCode(code, &err);
+            if (!g) return fail(std::string(code) + ": " + err);
+            sim::MapGenReport r;
+            double ms = 0;
+            std::string verify;
+            ++maps;
+            if (!run(*g, &r, &ms, &verify)) {
+                ++invalid;
+                std::fprintf(out, "%s\tinvalid\t%s\n", code, err.c_str());
+                continue;
+            }
+            times.push_back(ms);
+            ++attempts[r.attempt + 1];
+            if (r.attempt == 0) ++first_ok;
+            if (!r.failed.empty()) {
+                const std::string& f = r.failed[0];
+                ++first_fail[f.substr(0, f.find_first_of(":0123456789"))];
+            }
+            if (!verify.empty()) ++verify_bad;
+            std::fputs(sim::MapGen_ReportTsv(*g, r, ms, verify).c_str(), out);
+            std::fflush(out);
+        }
+    }
+    if (out != stdout) std::fclose(out);
+    std::sort(times.begin(), times.end());
+    auto pct = [&](int q) { return times.empty() ? 0.0 : times[std::min(times.size() - 1, times.size() * q / 100)]; };
+    std::fprintf(stderr, "mapgen sweep: %d maps, valid %d (%.1f %%), first attempt %.1f %%, engine check failed %d\n",
+                 maps, maps - invalid, 100.0 * (maps - invalid) / std::max(1, maps),
+                 100.0 * first_ok / std::max(1, maps), verify_bad);
+    std::fprintf(stderr, "attempts:");
+    for (const auto& [a, c] : attempts) std::fprintf(stderr, " %d:%d", a, c);
+    std::fprintf(stderr, "\nfirst failure by check:");
+    for (const auto& [f, c] : first_fail) std::fprintf(stderr, " [%s] %d", f.c_str(), c);
+    std::fprintf(stderr, "\nbuild with checks: p50 %.1f ms, p99 %.1f ms, max %.1f ms\n", pct(50), pct(99),
+                 times.empty() ? 0.0 : times.back());
+    return invalid == 0 && verify_bad == 0 ? 0 : 1;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -514,6 +715,8 @@ int main(int argc, char** argv) {
     std::string stats_path;
     std::uint32_t stats_every = 5000;
     std::string mission_state_path;
+    std::string mapgen_report, mapgen_out;  // --mapgen-report <code>, --mapgen-out <file>
+    std::vector<std::string> mapgen_sweep;  // --mapgen-sweep <first seed> <count> <settings>
     sim::SkirmishSetup setup;
     std::string slots_text;
     for (int i = 1; i < argc; ++i) {
@@ -530,6 +733,13 @@ int main(int argc, char** argv) {
             stats_path = argv[++i];
         } else if (a == "--stats-every" && i + 1 < argc) {
             stats_every = std::max<std::uint32_t>(1, static_cast<std::uint32_t>(std::strtoul(argv[++i], nullptr, 10)));
+        } else if (a == "--mapgen-report" && i + 1 < argc) {
+            mapgen_report = argv[++i];
+        } else if (a == "--mapgen-out" && i + 1 < argc) {
+            mapgen_out = argv[++i];
+        } else if (a == "--mapgen-sweep" && i + 3 < argc) {
+            mapgen_sweep = {argv[i + 1], argv[i + 2], argv[i + 3]};
+            i += 3;
         } else if (a == "--new-skirmish") {
             new_skirmish = true;
         } else if (a == "--new-mission") {
@@ -566,14 +776,18 @@ int main(int argc, char** argv) {
             pos.push_back(a);
         }
     }
-    if (pos.size() < 3 || pos.size() > 4) {
+    const bool mapgen = !mapgen_report.empty() || !mapgen_sweep.empty();
+    if (mapgen ? pos.size() != 1 : pos.size() < 3 || pos.size() > 4) {
         std::fprintf(stderr,
-                     "usage: antanta-headless <game dir> <save.svg|map.dat> <out.tsv> [ticks=1] "
+                     "usage: antanta-headless <game dir> <save.svg|map.dat|map code> <out.tsv> [ticks=1] "
                      "[--orders <trace.tsv.gz>] [--grid-out <file>] [--adopt <tick>] [--view <file>] "
                      "[--view-static <W>x<H>] [--new-skirmish [--players <n>] [--resources <0..2>] "
                      "[--slots <l/n/c/t,...>] [--seed <n>]] [--new-mission [--seed <n>]] [--original-rules] "
                      "[--plus] [--save-load-at <t,...>] [--net-log] [--save-dir <dir>] [--run-to-end] "
-                     "[--stats <file> [--stats-every <n>]] [--no-trace]\n");
+                     "[--stats <file> [--stats-every <n>]] [--no-trace]\n"
+                     "       antanta-headless <game dir> --mapgen-report <map code> [--mapgen-out <plan.ppm>]\n"
+                     "       antanta-headless <game dir> --mapgen-sweep <first seed (hex)> <count> <land|N-4-0,...> "
+                     "[--mapgen-out <file.tsv>]\n");
         return 2;
     }
     if (plus && original_rules) return fail("--plus and --original-rules exclude each other");
@@ -617,9 +831,13 @@ int main(int argc, char** argv) {
         if (auto table = parse_string_table(*st, &err)) sim::SkirmishSetup_CompNames(&setup, *table);
     }
     if (!slots_text.empty() && !parse_slots(slots_text, &setup, &err)) return fail(err);
+    if (mapgen) return mapgen_mode(game, *data, mapgen_report, mapgen_sweep, mapgen_out);
     if (net_log) return replay_net_log(game, pos[1], pos[2], ticks, params, *data);
-    auto file = load_file(pos[1], &err);
+    // A generated map (docs/map-generator.md): a map code in place of the map file, with --new-skirmish.
+    const auto gen = sim::MapGen_ParseCode(pos[1], nullptr);
+    auto file = gen ? std::optional<Bytes>(Bytes{}) : load_file(pos[1], &err);
     if (!file) return fail(err);
+    if (gen && !new_skirmish) return fail("a map code needs --new-skirmish");
     const bool is_map =
         pos[1].size() > 4 && (pos[1].substr(pos[1].size() - 4) == ".dat" || pos[1].substr(pos[1].size() - 4) == ".DAT");
     std::unique_ptr<sim::GameState> state;
@@ -679,11 +897,23 @@ int main(int argc, char** argv) {
         }
         state = state_on_heap([&] { return sim::GameState_NewMission(ms, *map, *data, tpl ? &*tpl : nullptr, &err); });
     } else if (new_skirmish) {
-        if (!is_map) return fail("--new-skirmish needs a map (.dat)");
-        auto map = parse_map(*file, &err);
-        if (!map) return fail(pos[1] + ": " + err);
-        const std::size_t slash = pos[1].find_last_of("/\\");
-        setup.map = slash == std::string::npos ? pos[1] : pos[1].substr(slash + 1);
+        if (!is_map && !gen) return fail("--new-skirmish needs a map (.dat) or a map code");
+        std::optional<MapData> map;
+        if (gen) {
+            const auto t0 = std::chrono::steady_clock::now();
+            map = sim::MapGen_Build(*gen, &err);
+            const auto ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+            if (!map) return fail(pos[1] + ": " + err);
+            setup.map = sim::MapGen_Code(*gen);  // the map's name is its code (the climate comes from it)
+            std::fprintf(stderr, "antanta-headless: generated map %s, %d x %d in %.0f ms, map hash %016llx\n",
+                         setup.map.c_str(), map->width, map->height, ms,
+                         static_cast<unsigned long long>(sim::MapGen_Hash(*map)));
+        } else {
+            map = parse_map(*file, &err);
+            if (!map) return fail(pos[1] + ": " + err);
+            const std::size_t slash = pos[1].find_last_of("/\\");
+            setup.map = slash == std::string::npos ? pos[1] : pos[1].substr(slash + 1);
+        }
 
         std::optional<AiTemplate> tpl;
         if (auto t = load_file(game + "/Data/Template4.tpl", &err)) {

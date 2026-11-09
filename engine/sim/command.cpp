@@ -20,8 +20,8 @@ struct KindInfo {
 // through the panel), toggle_advisor (the advisor buttons), market_auto (the market's automatic trade) and bind_group
 // (Ctrl+digit), facing_order (the right drag) and select_summary (the selection summary of the mission conditions)
 // are inputs of the new engine's app that the recorder writes no line for, not hooked orders; net_control (slice
-// MP9) is the network server's control change and plus_strike (Entente Engine Plus) the town centre's call-in strike,
-// ours alone (address 0).
+// MP9) is the network server's control change, plus_strike (Entente Engine Plus) the town centre's call-in strike and
+// queue_order (docs/bugs.md B317) the Shift + right click order queue, ours alone (address 0).
 constexpr KindInfo kKindInfo[Command::kKinds] = {
     {"ui_order", orig::kUiOrderToPoint},
     {"order_move", orig::kOrderMove},
@@ -69,6 +69,7 @@ constexpr KindInfo kKindInfo[Command::kKinds] = {
     {"select_summary", orig::kSelectOnRelease},
     {"net_control", 0},
     {"plus_strike", 0},
+    {"queue_order", 0},
 };
 
 std::vector<std::string_view> split(std::string_view s, char sep) {

@@ -445,4 +445,45 @@ std::optional<GameState> GameState_FromMap(const MapData& map, const GameData& d
 
 bool Cell_Obstacle(const Map& m, std::int32_t x, std::int32_t y) { return Obstacle(m, x, y); }
 
+// Our rules (docs/ai.md 10.17): the land masses of the terrain alone, labelled from 1 by a breadth-first search in
+// cell order over the 8 steps; a cell is land when it is inside the border band and has no obstacle (water) under it,
+// or is an open bridge cell. Houses, trees, deposits and slopes are left out, so the labels never change during a
+// game (the obstacle grid and the bridges are fixed). 0: water or the border. Built at the first call, a scratch
+// cache (GameState::land_region) that a load clears.
+std::uint16_t Land_Region(GameState& s, std::int32_t x, std::int32_t y) {
+    const Map& m = s.map;
+    const std::size_t n = static_cast<std::size_t>(m.width) * m.height;
+    if (x < 0 || y < 0 || x >= m.width || y >= m.height) return 0;
+    if (s.land_region.size() != n) {
+        const auto land = [&](Cell c) {
+            if (Border(m, c.x, c.y)) return false;
+            const std::uint16_t o = m.objects[Index(m, c.x, c.y)];
+            if (o >= 0x65 && o <= 999) return BridgeCellOpen(s, o, c);
+            return !Obstacle(m, c.x, c.y);
+        };
+        std::vector<std::uint16_t> lab(n, 0);
+        std::vector<Cell> queue;
+        std::uint16_t next = 0;
+        for (std::int32_t cy = 0; cy < m.height; ++cy) {
+            for (std::int32_t cx = 0; cx < m.width; ++cx) {
+                if (lab[Index(m, cx, cy)] != 0 || !land(Cell{cx, cy}) || next == 0xffff) continue;
+                lab[Index(m, cx, cy)] = ++next;
+                queue.assign(1, Cell{cx, cy});
+                for (std::size_t h = 0; h < queue.size(); ++h) {
+                    for (std::uint8_t d = 1; d <= 8; ++d) {
+                        const Cell q = Cell_Step(queue[h], d);
+                        if (q.x < 0 || q.y < 0 || q.x >= m.width || q.y >= m.height) continue;
+                        std::uint16_t& l = lab[Index(m, q.x, q.y)];
+                        if (l != 0 || !land(q)) continue;
+                        l = next;
+                        queue.push_back(q);
+                    }
+                }
+            }
+        }
+        s.land_region.swap(lab);
+    }
+    return s.land_region[Index(m, x, y)];
+}
+
 }  // namespace antanta::sim

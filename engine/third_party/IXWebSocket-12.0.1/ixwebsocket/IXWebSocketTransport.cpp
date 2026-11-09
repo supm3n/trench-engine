@@ -280,7 +280,11 @@ namespace ix
         }
         if (pingMessage == SendMessageKind::Ping)
         {
-            return sendPing(ss.str());
+            _rxSincePing = false;  // Entente Engine (engine/THIRD_PARTY.md, 2026-11-08)
+            WebSocketSendInfo info = sendPing(ss.str());
+            std::lock_guard<std::mutex> lock(_txbufMutex);
+            _txAtPing = _txbuf.size();
+            return info;
         }
         else if (pingMessage == SendMessageKind::Binary)
         {
@@ -322,7 +326,24 @@ namespace ix
             {
                 // If it is not a 'ping' message of ping type, there is no need to judge whether
                 // pong will receive it
-                if (_pingType == SendMessageKind::Ping && !_pongReceived)
+                // Entente Engine (engine/THIRD_PARTY.md, 2026-11-08): pings and pongs wait behind a big message in the
+                // send buffer (a rejoin's save on a slow upload). While bytes still come in or ours still go out the
+                // link lives: the wait for the pong starts again. Only a link where nothing moved for a whole
+                // interval is closed.
+                size_t txNow;
+                {
+                    std::lock_guard<std::mutex> lock(_txbufMutex);
+                    txNow = _txbuf.size();
+                }
+                if (_pingType == SendMessageKind::Ping && !_pongReceived &&
+                    (_rxSincePing || txNow < _txAtPing))
+                {
+                    _rxSincePing = false;
+                    _txAtPing = txNow;
+                    std::lock_guard<std::mutex> lck(_lastSendPingTimePointMutex);
+                    _lastSendPingTimePoint = std::chrono::steady_clock::now();
+                }
+                else if (_pingType == SendMessageKind::Ping && !_pongReceived)
                 {
                     // ping response (PONG) exceeds the maximum delay, close the connection
                     close(WebSocketCloseConstants::kInternalErrorCode,
@@ -1133,6 +1154,7 @@ namespace ix
             }
             else
             {
+                _rxSincePing = true;  // Entente Engine (engine/THIRD_PARTY.md, 2026-11-08)
                 _rxbuf.insert(_rxbuf.end(), _readbuf.begin(), _readbuf.begin() + ret);
             }
         }

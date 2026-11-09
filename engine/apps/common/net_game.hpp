@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "apps/common/view_input.hpp"
+#include "formats/map.hpp"
 #include "net/client.hpp"
 #include "net/protocol.hpp"
 #include "sim/ownsave.hpp"
@@ -53,8 +54,13 @@ NetTickResult NetGame_RunTick(sim::GameState& s, NetTick& t, const FileLoader& l
 struct NetGameHooks {
     // A new skirmish from the start's setup (setup.net set, my_slot this machine's slot). The caller keeps the state.
     std::function<sim::GameState*(const sim::SkirmishSetup& setup, std::string* error)> new_game;
-    // Back after a drop: the state loaded from another player's save; the caller takes it over.
-    std::function<sim::GameState*(std::unique_ptr<sim::GameState> state)> adopt;
+    // Back after a drop: the state loaded from another player's save; the caller takes it over. ground: the save's
+    // generated map (its GRND chunk, a resumed game's autosave); none: the map file, or the map built from the code.
+    std::function<sim::GameState*(std::unique_ptr<sim::GameState> state, std::shared_ptr<const MapData> ground)> adopt;
+    // Slice G8: the generated map the app holds and (code) the map code it was built from, for the GRND chunk of our
+    // own saves of the game (the autosaves and the rejoin's save too); null: none. NetGame writes it only when the
+    // code is the game's map name, so a ground left from an earlier game is never saved.
+    std::function<std::shared_ptr<const MapData>(std::string* code)> ground;
     // After each tick (the app's sounds and messages, its trace file); may be empty. trace_lines is empty unless
     // `trace` is set (or run() was given a trace to fill).
     std::function<void(const std::string& trace_lines)> after_tick;
@@ -107,6 +113,7 @@ class NetGame {
   private:
     void report(bool now);
     sim::OwnSaveMeta client_meta() const;
+    std::shared_ptr<const MapData> ground() const;  // the hook's ground when it is this game's map
 
     net::Client& client_;
     NetGameHooks hooks_;

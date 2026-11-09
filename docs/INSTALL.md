@@ -171,12 +171,24 @@ game.
 - **On the same home network:** in the main menu click **Network game**. Games on the same network show up in the list
   by themselves. To host, click **Create** and set up the game; the others pick it from the list and click **Join**.
   A password is optional.
-- **Over the internet:** the host tells the others the host's internet address, and they type it on the first page
-  of **Network game**.
-  The host's router must forward **TCP port 47625** to the host's PC.
+- **Over the internet:** the address the lobby shows ("Others join at ...") only works on the host's own network.
+  Friends over the internet need the host's public address instead (a "what is my IP" page shows it), typed on the
+  first page of **Network game**. The host's router must forward **TCP port 47625** to the host's PC. Some internet
+  lines (often mobile ones, and some fibre and cable lines that share one address between many customers) cannot
+  host at all; then someone else hosts.
+- **IPv6:** if the host's internet line has IPv6, the lobby shows an IPv6 address that works over the internet
+  without port forwarding. Friends type it on the first page like any other address. Many routers block incoming
+  IPv6 by default, so the host may need to allow TCP port 47625 for the PC in the router's IPv6 firewall settings.
 - **The Windows Firewall:** the first time you host or look for games, Windows asks whether Entente Engine may use the
-  network. Allow it for private networks; without it nobody can join and the list stays empty. Entente Engine uses
-  **UDP port 47624** to find games on your network and **TCP port 47625** for the game itself.
+  network. Allow it, and tick the kind of network you are on. Windows 11 marks a new network as **Public**, so tick
+  Public too, or first set your home network to Private (Settings, Network & internet, your connection, Network
+  profile type: Private). Without it nobody can join and the list stays empty. Entente Engine uses **UDP port 47624**
+  to find games on your network and **TCP port 47625** for the game itself.
+- **If you clicked Cancel** (or ticked the wrong network): open Windows Security, Firewall & network protection,
+  Allow an app through firewall, click Change settings, find Entente Engine (or add `EntenteEngine.exe` with Allow
+  another app) and tick both Private and Public.
+- **Another antivirus with its own firewall** (Norton, Bitdefender, Kaspersky and the like) may block the game in the
+  same way: allow Entente Engine there too.
 - If a player's connection drops, their seat is kept for 5 minutes (a setting) and the computer plays it meanwhile;
   they can rejoin and take it back. A player who leaves is replaced by the computer. Network games autosave, and a
   saved network game can be continued from the network page.
@@ -229,8 +241,9 @@ of Windows lack it until the free Media Feature Pack from Microsoft is installed
 and everything else plays as usual.
 
 **Nobody can join my network game, or the list of games stays empty.**
-Allow Entente Engine in the Windows Firewall for private networks (Windows Security, Firewall and network
-protection, Allow an app through the firewall). Over the internet, forward TCP port 47625 on the host's router. A PC
+Allow Entente Engine in the Windows Firewall for the network you are on, Public as well as Private (see
+[Playing over the network](#playing-over-the-network), "If you clicked Cancel"), and in your antivirus' firewall if it
+has one. Over the internet, use the host's public address and forward TCP port 47625 on the host's router. A PC
 with several networks (a VPN or virtual network adapters) may not find games on the other network; typing the host's
 address always works. Check that everybody has the same version.
 

@@ -22,7 +22,8 @@
 //                   held: the facing arrow) | mouse <x> <y> | build <house type> | press <x> <y> [shift] |
 //                   release <x> <y> (the left button held between them; with a build type a moving mouse may place
 //                   more houses, build_hold) | click_unit <player> <id> [shift] |
-//                   rclick_unit <player> <id> | click_house <player> <slot> [shift] | rclick_house <player> <slot> |
+//                   rclick_unit <player> <id> [shift] | click_house <player> <slot> [shift] |
+//                   rclick_house <player> <slot> [shift] (Shift + right click: the order queue, docs/bugs.md B317) |
 //                   key <SDL key name> | train <unit type> | order <O line, fields by spaces> |
 //                   message <text> (an event message of the screen text list, docs/interface.md A.7) |
 //                   hold <x0> <y0> <x1> <y1> (a box drag not released yet: the live selection, D.1) |
@@ -125,6 +126,8 @@
 //   --plus: every new skirmish this run starts (the setup screen's Start, the in-game Restart) uses Entente Engine
 //   Plus (SkirmishSetup::plus, docs/your-version.md), as antanta-headless --plus, whatever the setup screen's rule set
 //   box says; a network host's choices take "plus=1" instead. A save keeps the rules it was played with.
+//   A map code in place of the save (docs/map-generator.md, v1-N-2-land-summer-3F9A2C71): a new skirmish on the
+//   generated map, you against Medium computers on every other position; --seed and --plus as above.
 // Web (docs/web.md): the page writes the game's files into /game/ (lower-case paths) and keeps /libsdl/ (our
 //      settings, profiles and saves) in the browser's storage, then starts the app: the front-end as with --menu
 //      (no videos), or with a save path as its argument that save (--bench-frame works there too). --frame-log: every
@@ -174,6 +177,7 @@
 #include "script/lua_manager.hpp"
 #include "script/lua_save.hpp"
 #include "sim/endgame.hpp"
+#include "sim/mapgen.hpp"
 #include "sim/mission.hpp"
 #include "sim/ownsave.hpp"
 #include "sim/skirmish.hpp"
@@ -357,6 +361,7 @@ struct App {
     // 2 asks, a host's lobby answers, on net_lan_port), the pre-game script of a batch run (--net-menu-script).
     bool net_menu = false;
     std::string net_lobby_shown, net_my_address, net_menu_script;
+    std::string net_my_address6;  // decision 55: the host's global IPv6 address (empty: none)
     int net_lobby_joined = 0;
     std::uint16_t net_lan_port = 47624;
 #ifndef __EMSCRIPTEN__
@@ -429,6 +434,10 @@ struct App {
     bool new_game = false;
     std::string game_source;  // what the session log's first line names: "save <path>" or the skirmish's choices
     std::optional<sim::SkirmishSetup> last_setup;  // the choices of the skirmish being played (the in-game Restart)
+    // Slice G7 (docs/map-generator-plan.md 6): the generated map the game started from, whole, and its code (the map
+    // name of the game). A save of that game keeps it (chunk GRND), a Restart starts from it again.
+    std::shared_ptr<const MapData> gen_ground;
+    std::string gen_code;
     bool plus = false;  // --plus: new skirmishes with Entente Engine Plus (the setup screen's box aside)
 
 
@@ -1014,7 +1023,19 @@ bool enter_game(App& app, MapData map, ViewPos pos, std::string* err) {
 bool load_own_game(App& app, const Bytes& file, std::string* err);  // slice H, below
 sim::ScriptVmPtr reopen_script(App& app, const std::optional<std::string>* own, const std::string& svg_path);  // M6
 
+bool start_new_skirmish(App& app, const sim::SkirmishSetup& setup, std::string* err, bool net);  // below
+
 bool load_game(App& app, std::string* err) {
+    // A map code in place of the save (docs/map-generator.md, slice G1): a new skirmish on the generated map, you
+    // against Medium computers of random nations on every position, the game seed from --seed (default 12345).
+    if (const auto gen = sim::MapGen_ParseCode(app.save_path, nullptr)) {
+        sim::SkirmishSetup setup;
+        setup.map = sim::MapGen_Code(*gen);
+        setup.players = gen->players;
+        for (std::uint8_t i = 1; i < gen->players; ++i) setup.slots[i] = sim::SkirmishSlot{2, 5, i, 0};
+        if (app.seed) setup.seed = *app.seed;
+        return start_new_skirmish(app, setup, err, false);
+    }
     UnitTypeCounts types{};
     const std::unique_ptr<sim::GameData> data = data_on_heap(app, &types, err);
     if (!data) return false;
@@ -1078,9 +1099,16 @@ bool start_new_skirmish(App& app, const sim::SkirmishSetup& setup, std::string* 
     data->speed_ms = app.settings.speed_ms;
     data->short_anims = app.settings.short_anims ? 1 : 0;
     const std::string path = "Maps/" + setup.map;
-    auto file = load(path, err);
-    if (!file) return false;
-    auto map = parse_map(*file, err);
+    std::optional<MapData> map;
+    if (app.gen_ground && app.gen_code == setup.map) {  // slice G7: the same generated map again (Restart)
+        map = *app.gen_ground;
+    } else if (const auto gen = sim::MapGen_ParseCode(setup.map, nullptr)) {  // a generated map (map-generator.md)
+        map = sim::MapGen_Build(*gen, err);
+    } else if (auto file = load(path, err)) {
+        map = parse_map(*file, err);
+    } else {
+        return false;
+    }
     if (!map) {
         *err = path + ": " + *err;
         return false;
@@ -1108,6 +1136,11 @@ bool start_new_skirmish(App& app, const sim::SkirmishSetup& setup, std::string* 
     app.host.replace(std::move(state));
     app.save.reset();
     app.new_game = true, app.own_game = false;
+    if (sim::MapGen_ParseCode(setup.map, nullptr)) {  // slice G7: kept for the save and the Restart
+        app.gen_ground = std::make_shared<const MapData>(*map), app.gen_code = setup.map;
+    } else {
+        app.gen_ground.reset(), app.gen_code.clear();
+    }
     app.last_setup = setup;
     app.last_setup->plus = named.plus;  // the save's setup and the Restart keep the rule set
     app.game_source = "new skirmish on " + path + ", " + std::to_string(setup.players) + " players, resources " +
@@ -1569,16 +1602,18 @@ bool minimap_left(App& app, float x, float y) {
 
 // A right click on the minimap: the order of a right click on the world at the map point under it (ui_order, or the
 // rally point of a selected house), sent once (whether the original sends it again on the release is open,
-// docs/interface.md H.3).
-bool minimap_right(App& app, float x, float y) {
+// docs/interface.md H.3). With Shift the Shift-click order queue's order (ours, docs/bugs.md B317) when it is one.
+bool minimap_right(App& app, float x, float y, bool shift) {
     if (!minimap_on(app)) return false;
     int px = 0, py = 0;
     const ui::MinimapLayout l = minimap_place(app, x, y, &px, &py);
     if (!ui::minimap_contains(l, px, py)) return ui::minimap_hud_contains(l, px, py);
     const ui::WorldPoint w = ui::minimap_world_point(l, app.view()->map.width, app.view()->map.height, px, py);
     std::string what;
+    const WorldGraphics* g = app.graphics ? &*app.graphics : nullptr;
     auto order =
-        ui::right_click(*app.view(), app.graphics ? &*app.graphics : nullptr, app.sel, ViewPos{}, w.x, w.y, &what);
+        shift ? ui::queue_click(*app.view(), g, app.sel, ViewPos{}, w.x, w.y, &what) : std::vector<sim::Command>{};
+    if (order.empty()) order = ui::right_click(*app.view(), g, app.sel, ViewPos{}, w.x, w.y, &what);
     queue_orders(app, std::move(order), what + " (minimap)");
     return true;
 }
@@ -1851,8 +1886,9 @@ void box_live(App& app) {
 }
 
 // A right press. True when it went to the world (the order at the press point is queued); the caller may then start
-// a facing drag (slice I9, right_release).
-bool right_click(App& app, float x, float y) {
+// a facing drag (slice I9, right_release). With Shift: the Shift-click order queue (ours, docs/bugs.md B317), or the
+// plain order when ui::queue_click says the click is one.
+bool right_click(App& app, float x, float y, bool shift = false) {
     if (window_mouse(app, x, y, true, true, false)) return false;  // slice I8
     if (panel_mouse(app, x, y, true, true, false)) return false;   // slice I4: the panel's press
     if (app.strike >= 0) {                                         // Entente Engine Plus: the strike's target mode
@@ -1865,19 +1901,21 @@ bool right_click(App& app, float x, float y) {
         say(app, "building cancelled");
         return false;
     }
-    if (!in_panel(app, y) && fire_point_click(app, x, y)) return false;  // cursor mode 5: order_point
-    if (in_panel(app, y) || minimap_right(app, x, y)) return false;      // slice I2: the minimap
+    if (!in_panel(app, y) && fire_point_click(app, x, y)) return false;     // cursor mode 5: order_point
+    if (in_panel(app, y) || minimap_right(app, x, y, shift)) return false;  // slice I2: the minimap
     std::string what;
-    auto order = ui::right_click(*app.view(), app.graphics ? &*app.graphics : nullptr, app.sel, app.pos,
-                                 static_cast<int>(x), static_cast<int>(y), &what);
+    const WorldGraphics* g = app.graphics ? &*app.graphics : nullptr;
+    const int sx = static_cast<int>(x), sy = static_cast<int>(y);
+    auto order = shift ? ui::queue_click(*app.view(), g, app.sel, app.pos, sx, sy, &what) : std::vector<sim::Command>{};
+    if (order.empty()) order = ui::right_click(*app.view(), g, app.sel, app.pos, sx, sy, &what);
     queue_orders(app, std::move(order), what);
     return true;
 }
 
 
 
-void right_press(App& app, float x, float y) {
-    app.right_held = right_click(app, x, y);
+void right_press(App& app, float x, float y, bool shift = false) {
+    app.right_held = right_click(app, x, y, shift);
     app.rdrag_x0 = x + static_cast<float>(view_x(app.pos)), app.rdrag_y0 = y + static_cast<float>(view_y(app.pos));
 }
 
@@ -2260,14 +2298,23 @@ void draw_selection(App& app) {
         app.set_exit = false;
         app.strike = -1, app.strike_start.reset();
     }
-    if (const auto flag = ui::rally_flag_point(s, app.sel); flag && !app.debug_hud) {
+    const auto flag = app.debug_hud ? std::nullopt : ui::rally_flag_point(s, app.sel);
+    const ui::OrderRoute route = app.debug_hud ? ui::OrderRoute{} : ui::order_route(s, app.sel);
+    if (flag || !route.marks.empty()) {
         if (!app.rally_gfx) app.rally_gfx = ui::rally_graphics_open(r, loader(app));
         const std::size_t c = s.players[s.my_player].colour;
         const auto& rgb = app.graphics->player_rgb;
         const std::uint32_t tint =
             c < rgb.size() ? std::uint32_t{rgb[c][0]} << 16 | rgb[c][1] << 8 | rgb[c][2] : 0xffffff;
-        ui::rally_flag_draw(*app.rally_gfx, (*flag)[0] - static_cast<float>(view_x(app.pos)),
-                            (*flag)[1] - static_cast<float>(view_y(app.pos)), app.flag_phase.sprite(), tint);
+        const auto vx = static_cast<float>(view_x(app.pos)), vy = static_cast<float>(view_y(app.pos));
+        if (flag) ui::rally_flag_draw(*app.rally_gfx, (*flag)[0] - vx, (*flag)[1] - vy, app.flag_phase.sprite(), tint);
+        // Ours (docs/bugs.md B317): the Shift-click route of the selection, a line in the player's colour from each
+        // unit through its queued points and the rally flag on each point.
+        SDL_SetRenderDrawColor(r, static_cast<Uint8>(tint >> 16), static_cast<Uint8>(tint >> 8),
+                               static_cast<Uint8>(tint), 160);
+        for (const auto& l : route.lines) SDL_RenderLine(r, l[0] - vx, l[1] - vy, l[2] - vx, l[3] - vy);
+        for (const auto& m : route.marks)
+            ui::rally_flag_draw(*app.rally_gfx, m[0] - vx, m[1] - vy, app.flag_phase.sprite(), tint);
         app.flag_phase.advance(app.frame_ms, std::max<double>(1, s.speed_ms));
     }
     if (app.build_type >= 0 && app.sel.units.empty()) app.build_type = -1;
@@ -2804,10 +2851,7 @@ ui::MinimapPalette minimap_ground_colours(App& app) {
     ui::MinimapPalette pal;
     std::string err;
     if (auto file = loader(app)("Data/LandTextures/LandTextures.dat", &err)) {
-        const std::size_t n = file->size() >= 2 ? (*file)[0] | (*file)[1] << 8 : 0;
-        for (std::size_t i = 0; i < n && 2 + 3 * i + 2 < file->size(); ++i) {
-            pal.tiles.push_back({(*file)[2 + 3 * i], (*file)[3 + 3 * i], (*file)[4 + 3 * i]});
-        }
+        pal = ui::minimap_ground_palette(*file);
     } else {
         SDL_Log("minimap: %s", err.c_str());
     }
@@ -3112,7 +3156,7 @@ void run_event(App& app, const ScriptEvent& e) {
         auto held = [&](const char* m) {
             return std::find(w.begin() + std::min<std::size_t>(3, w.size()), w.end(), m) != w.end();
         };
-        right_click(app, num(w, 1), num(w, 2));
+        right_click(app, num(w, 1), num(w, 2), held("shift"));
         window_mouse(app, num(w, 1), num(w, 2), false, true, held("shift"));               // slice I8: release
         panel_mouse(app, num(w, 1), num(w, 2), false, true, held("ctrl"), held("shift"));  // slice I4: release
     } else if ((ev == "rdrag" || ev == "rhold") && w.size() > 4) {  // slice I9: the right button dragged (and released)
@@ -3159,7 +3203,7 @@ void run_event(App& app, const ScriptEvent& e) {
             left_click(app, fx, fy - 18, w.size() > 3 && w[3] == "shift");
             say(app, "script click: " + std::to_string(app.sel.units.size()) + " units selected");
         } else {
-            right_click(app, fx, fy - 18);
+            right_click(app, fx, fy - 18, w.size() > 3 && w[3] == "shift");
         }
     } else if ((ev == "click_cell" || ev == "rclick_cell") && w.size() > 2) {
 
@@ -3170,7 +3214,7 @@ void run_event(App& app, const ScriptEvent& e) {
         if (ev == "click_cell") {
             left_click(app, fx, fy, w.size() > 3 && w[3] == "shift");
         } else {
-            right_click(app, fx, fy);
+            right_click(app, fx, fy, w.size() > 3 && w[3] == "shift");
         }
     } else if (ev == "click_site" && app.build_type >= 0 && !app.sel.units.empty()) {
         // Slice MP8: the build click on the free cell nearest the first selected unit (rings of 2 to 12 cells) on the
@@ -3209,7 +3253,7 @@ void run_event(App& app, const ScriptEvent& e) {
         if (ev == "click_house") {
             left_click(app, static_cast<float>(sx), static_cast<float>(sy), w.size() > 3 && w[3] == "shift");
         } else {
-            right_click(app, static_cast<float>(sx), static_cast<float>(sy));
+            right_click(app, static_cast<float>(sx), static_cast<float>(sy), w.size() > 3 && w[3] == "shift");
         }
     } else if (ev == "menu" && w.size() > 2) {  // the front-end's windows: `menu <x> <y> [click]` at a canvas point,
         if (!app.menu) return;                  // `menu key <SDL key name>`
@@ -3812,15 +3856,31 @@ void net_autosave(App& app, std::uint32_t tick, sim::OwnSavePending save) {
 }
 
 // A network game from a save (a rejoin after a drop): the state as another player saved it, the ground of its map, the
-// camera on our own player.
-bool enter_net_save(App& app, std::unique_ptr<sim::GameState> state, std::string* err) {
+// camera on our own player. Slice G8: a generated map's ground from the save (`saved`, its GRND chunk: a resumed
+// game's autosave, the rejoin's save), else built again from its code (a save without GRND).
+bool enter_net_save(App& app, std::unique_ptr<sim::GameState> state, std::shared_ptr<const MapData> saved,
+                    std::string* err) {
     const std::string path = "Maps/" + state->map_name;
-    auto map_file = loader(app)(path, err);
-    if (!map_file) return false;
-    auto map = parse_map(*map_file, err);
+    const auto gen = sim::MapGen_ParseCode(state->map_name, nullptr);
+    std::optional<MapData> map;
+    if (saved) {
+        map = *saved;
+    } else if (gen) {
+        map = sim::MapGen_Build(*gen, err);
+    } else if (auto map_file = loader(app)(path, err)) {
+        map = parse_map(*map_file, err);
+    } else {
+        return false;
+    }
     if (!map) {
         *err = path + ": " + *err;
         return false;
+    }
+    if (gen || saved) {  // kept for our own saves of the game (GRND), as a new generated game keeps it
+        app.gen_ground = saved ? std::move(saved) : std::make_shared<const MapData>(*map);
+        app.gen_code = state->map_name;
+    } else {
+        app.gen_ground.reset(), app.gen_code.clear();
     }
     MapData ground = std::move(*map);  // houses and units come from the state
     ground.houses.clear();
@@ -3917,7 +3977,8 @@ bool net_open(App& app, std::string* err) {
         }
         const std::unique_ptr<sim::GameData> data = data_on_heap(app, nullptr, err);
         if (!data) return false;
-        s.speed_ms = data->speed_ms, s.short_anims = data->short_anims;
+        // Never 0 (a GameInf.txt value of 0): the start would then leave each machine its own (sim/skirmish.cpp).
+        s.speed_ms = data->speed_ms != 0 ? data->speed_ms : 53, s.short_anims = data->short_anims;
         if (auto file = load("Data/GameInf.txt", &e)) {
             if (auto v = parse_gameinf(*file, &e)) s.economic = v->economic, s.military = v->military;
         }
@@ -3926,10 +3987,16 @@ bool net_open(App& app, std::string* err) {
         while (s.my_slot < 8 && s.slots[s.my_slot].level != 4 && s.slots[s.my_slot].level != 5) ++s.my_slot;
         if (!app.net_resume.empty() && !net_resume_setup(app, err)) return false;  // slice MP9: the save's setup, seat
         // The map's position count: the server works out each slot's player from it (SkirmishSetup_SlotPlayers).
-        auto map_file = load("Maps/" + s.map, err);
-        auto map = map_file ? parse_map(*map_file, err) : std::nullopt;
-        if (!map) return false;
-        app.net_positions = static_cast<std::uint8_t>(map->player_nations.size());
+        // Slice G8: a generated map has the positions its code names (the map is built when the game starts).
+        if (const auto gen = sim::MapGen_ParseCode(s.map, nullptr)) {
+            s.map = sim::MapGen_Code(*gen);  // the canonical code, as the server writes it back
+            app.net_positions = gen->players;
+        } else {
+            auto map_file = load("Maps/" + s.map, err);
+            auto map = map_file ? parse_map(*map_file, err) : std::nullopt;
+            if (!map) return false;
+            app.net_positions = static_cast<std::uint8_t>(map->player_nations.size());
+        }
         if (!app.net_menu) app.net_tick_ms = cfg.tick_ms;  // the menu's: the host's setup screen chose it
     }
     if (app.net_port > 0) {
@@ -3969,15 +4036,20 @@ bool net_open(App& app, std::string* err) {
         if (!app.script_path.empty() && !load_script(app, e)) return nullptr;
         return &*app.host.game().state;
     };
-    hooks.adopt = [&app](std::unique_ptr<sim::GameState> s) -> sim::GameState* {  // slice MP9: back after a drop
+    hooks.adopt = [&app](std::unique_ptr<sim::GameState> s,
+                         std::shared_ptr<const MapData> ground) -> sim::GameState* {  // slice MP9: back after a drop
         std::string e;
-        if (!enter_net_save(app, std::move(s), &e)) {
+        if (!enter_net_save(app, std::move(s), std::move(ground), &e)) {
             SDL_Log("network game: %s", e.c_str());
             return nullptr;
         }
         return &*app.host.game().state;
     };
     hooks.autosave = [&app](std::uint32_t tick, sim::OwnSavePending save) { net_autosave(app, tick, std::move(save)); };
+    hooks.ground = [&app](std::string* code) {  // slice G8 (NetGame checks the code is the game's)
+        *code = app.gen_code;
+        return app.gen_ground;
+    };
     hooks.after_tick = [&app](const std::string& lines) {
         if (app.net_trace) std::fwrite(lines.data(), 1, lines.size(), app.net_trace);
         TickRecord r;
@@ -4112,7 +4184,13 @@ bool net_pump(App& app, int max_ticks) {
     if (const auto d = c.desync(); d && !app.net_desync_said) {
         app.net_desync_said = true;
         SDL_Log("network game out of step after tick %u (the server stopped it)", d->tick);
-        if (app.started) say(app, "the network game is out of step: stopped");
+        // Slice G8: the start's own hash differs: the players' maps differ (for a generated map: its code built
+        // another map on some machine), before anything was played
+        const std::string why = d->tick == 0
+                                    ? "the players' maps differ (" + c.setup().map + "): stopped before the start"
+                                    : "the network game is out of step: stopped";
+        if (d->tick == 0) SDL_Log("network game: %s", why.c_str());
+        if (app.started) say(app, why);
     }
     if (app.started && !app.end_shown) {
         // The end for this machine's player (TStrateg_Die keeps no result in a network game): a line and the log.
@@ -4228,6 +4306,7 @@ void net_menu_open(App& app, bool host, const std::string& resume = {}) {
     }
     if (host) {
         app.net_my_address = net::Lan_LocalAddress();
+        app.net_my_address6 = app.net_bind == "0.0.0.0" ? net::Lan_LocalAddress6() : std::string();
         app.lan_host = std::make_unique<net::LanHost>();
         if (!app.lan_host->open(app.net_bind, app.net_lan_port, &err)) {
             SDL_Log("network: the game is not listed on this network: %s", err.c_str());
@@ -4296,6 +4375,14 @@ ui::NetLobby net_lobby(App& app) {
                                {{"address", app.net_my_address.empty() ? ours(app, "net.this_pc")
                                                                        : ui::lang_data(&app.lang, app.net_my_address)},
                                 {"port", std::to_string(app.net_port)}}));
+        // The address above is for the same network only; a global IPv6 address works over the internet too.
+        if (app.net_my_address6.empty()) {
+            l.lines.push_back(ours(app, "net.join_internet"));
+        } else {
+            l.lines.push_back(ours(
+                app, "net.join_ipv6",
+                {{"address", ui::lang_data(&app.lang, app.net_my_address6)}, {"port", std::to_string(app.net_port)}}));
+        }
         if (!app.net_password.empty()) l.lines.push_back(ours(app, "net.has_password"));
     }
     return l;
@@ -4368,10 +4455,7 @@ std::vector<ui::NetGameRow> net_saved_rows(App& app) {
             }
             r.when = when;
             r.name = ours(app, "net.saved_row",
-                          {{"map", ui::lang_data(&app.lang, info->map_name.size() > 4
-                                                                ? info->map_name.substr(0, info->map_name.size() - 4)
-                                                                : info->map_name)},
-                           {"when", r.when}});
+                          {{"map", ui::lang_data(&app.lang, ui::map_display_name(info->map_name))}, {"when", r.when}});
             found.push_back({info->saved_at, std::move(r)});
         }
     }
@@ -5007,16 +5091,34 @@ bool load_own_game(App& app, const Bytes& file, std::string* err) {
     load_saved_depth(loader(app), app.params, *state, &warnings);
     for (const std::string& w : warnings) SDL_Log("own save: %s", w.c_str());
     const std::string path = "Maps/" + state->map_name;
-    auto map_file = loader(app)(path, err);
-    if (!map_file) return false;
-    auto map = parse_map(*map_file, err);
-    if (!map) {
-        *err = path + ": " + *err;
-        return false;
+    std::optional<MapData> map;
+    const auto gen = sim::MapGen_ParseCode(state->map_name, nullptr);
+    if (meta.ground) {  // slice G7: a generated map, as the save keeps it
+        map = *meta.ground;
+    } else if (gen) {  // a generated map's save without its map (made before slice G7): built again from the code
+        map = sim::MapGen_Build(*gen, err);
+        if (!map) {
+            *err = state->map_name + ": " + *err;
+            return false;
+        }
+    } else {
+        auto map_file = loader(app)(path, err);
+        if (!map_file) return false;
+        map = parse_map(*map_file, err);
+        if (!map) {
+            *err = path + ": " + *err;
+            return false;
+        }
     }
     if (map->width != state->map.width || map->height != state->map.height) {
-        *err = path + " does not have the size of this save's map";
+        *err = (gen ? state->map_name : path) + " does not have the size of this save's map";
         return false;
+    }
+    if (gen) {
+        app.gen_ground = meta.ground ? meta.ground : std::make_shared<const MapData>(*map);
+        app.gen_code = state->map_name;
+    } else {
+        app.gen_ground.reset(), app.gen_code.clear();
     }
     MapData ground = std::move(*map);  // houses and units come from the state
     ground.houses.clear();
@@ -5072,6 +5174,7 @@ bool save_own_game(App& app, const std::string& name, std::string* err) {
     v.speed = static_cast<std::uint8_t>(app.speed);
     v.minimap_shown = app.minimap_shown ? 1 : 0, v.show_health = app.show_health ? 1 : 0, v.tab_index = app.tab_index;
     meta.setup = app.last_setup;
+    if (app.gen_ground && app.gen_code == g.state->map_name) meta.ground = app.gen_ground;  // slice G7
 #ifndef __EMSCRIPTEN__
     if (app.net_game) meta.net = app.net_game->save_meta().net;  // slice MP9: a network game's seats (Resume takes it)
 #endif
@@ -5116,8 +5219,7 @@ std::vector<ui::SaveEntry> save_entries(App& app) {
         if (info) {
             date_lines(info->saved_at, e);
             e.info[2] = info->player;
-            e.info[3] =
-                info->map_name.size() > 4 ? info->map_name.substr(0, info->map_name.size() - 4) : info->map_name;
+            e.info[3] = ui::map_display_name(info->map_name);  // a generated map: its code (slice G7)
             char buf[48];
             std::snprintf(buf, sizeof buf, "%u:%02u:%02u", info->play_time / 3600, info->play_time / 60 % 60,
                           info->play_time % 60);
@@ -6685,7 +6787,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* e) {
                         ui::minimap_contains(minimap_place(app, e->button.x, e->button.y, &px, &py), px, py);
                 }
             } else if (e->button.button == SDL_BUTTON_RIGHT) {
-                right_press(app, e->button.x, e->button.y);
+                right_press(app, e->button.x, e->button.y, shift);
             } else if (e->button.button == SDL_BUTTON_MIDDLE && smooth_camera(app) && !in_panel(app, e->button.y) &&
                        !over_panel(app, e->button.x, e->button.y)) {
                 app.panning = true;

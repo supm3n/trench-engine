@@ -54,8 +54,7 @@ std::uint64_t NetGame_DataHash(const FileLoader& load) {
     std::uint64_t h = 0xcbf29ce484222325ull;
     const char* const files[] = {"Data/BasicParams0.dat",    "Data/BasicParams1.dat",     "Data/BasicParams2.dat",
                                  "Data/BasicParams3.dat",    "Data/BasicParams4.dat",     "Data/BasicParams5.dat",
-                                 "Data/Objects/objects.les", "Data/ShipTowersParams.txt", "Data/Template4.tpl",
-                                 "Data/GameInf.txt"};
+                                 "Data/Objects/objects.les", "Data/ShipTowersParams.txt", "Data/Template4.tpl"};
     for (const char* f : files) {
         std::string err;
         const auto bytes = load(f, &err);
@@ -81,7 +80,7 @@ bool NetGame::begin() {
         std::vector<std::string> warnings;
         load_saved_depth(hooks_.load, *hooks_.params, *s, &warnings);
         s->my_player = r->player, s->paused = 0, s->game_result = 0, s->end_message = 0;
-        state_ = hooks_.adopt(std::move(s));
+        state_ = hooks_.adopt(std::move(s), std::move(meta.ground));
         if (!state_) {
             error_ = "the game could not take the saved state";
             return false;
@@ -100,6 +99,9 @@ bool NetGame::begin() {
     if (!state_) return false;
     hash_every_ = st.hash_every, autosave_every_ = st.autosave;
     tick_ = next_ = state_->tick, my_player_ = state_->my_player;
+    // Slice G8: the start's hash at once, before tick 1: it covers the ground (the map each machine loaded or built
+    // from a generated map's code), so a different map stops the game before it runs.
+    client_.send_hash(state_->tick, sim::GameState_NetHash(*state_));
     report(true);
     return true;
 }
@@ -125,7 +127,15 @@ sim::OwnSaveMeta NetGame::client_meta() const {
         if (!seat.name.empty()) meta.info.player += (meta.info.player.empty() ? "" : ", ") + seat.name;
     }
     meta.net = std::move(net);
+    meta.ground = ground();  // slice G8: a generated map's ground (GRND)
     return meta;
+}
+
+std::shared_ptr<const MapData> NetGame::ground() const {
+    if (!hooks_.ground || !state_) return nullptr;
+    std::string code;
+    std::shared_ptr<const MapData> g = hooks_.ground(&code);
+    return g && code == state_->map_name ? g : nullptr;
 }
 
 void NetGame::report(bool now) {
@@ -167,6 +177,7 @@ void NetGame::send_save(const sim::GameState& s) {
     sim::OwnSaveMeta meta;
     meta.info.name = "rejoin";
     meta.setup = client_.setup();
+    meta.ground = ground();  // slice G8: the player who comes back takes the same ground at once
     const Bytes file = sim::OwnSave_Write(s, meta);
     client_.send_save(s.tick, std::string(file.begin(), file.end()));
 }

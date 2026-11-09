@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <unordered_set>
 
 #include "sim/movement.hpp"
@@ -325,6 +326,40 @@ Minimap save_preview(const sim::GameState& s, const MinimapPalette& pal, bool ti
             static_cast<std::uint16_t>((v >> 19 & 0x1f) << 11 | (v >> 10 & 0x3f) << 5 | (v >> 3 & 0x1f)));
     }
     return m;
+}
+
+MinimapPalette minimap_ground_palette(ByteSpan file) {
+    MinimapPalette pal;
+    const std::size_t n = file.size() >= 2 ? (file[0] | file[1] << 8) : 0;
+    for (std::size_t i = 0; i < n && 2 + 3 * i + 2 < file.size(); ++i) {
+        pal.tiles.push_back({file[2 + 3 * i], file[3 + 3 * i], file[4 + 3 * i]});
+    }
+    return pal;
+}
+
+Minimap map_preview(const MapData& map, const MinimapPalette& pal) {
+    auto s = std::make_unique<sim::GameState>();  // large: on the heap
+    const std::size_t n =
+        static_cast<std::size_t>(std::max(0, map.width)) * static_cast<std::size_t>(std::max(0, map.height));
+    if (map.cells.size() != n || n == 0) return save_preview(*s, pal);
+    sim::Map& m = s->map;
+    m.width = static_cast<std::uint16_t>(map.width), m.height = static_cast<std::uint16_t>(map.height);
+    m.heights.resize(n), m.objects.resize(n), m.terrain.resize(n);
+    for (std::size_t i = 0; i < n; ++i) {  // as NewGame_LoadMap (sim/skirmish.cpp) fills them
+        const MapCell& c = map.cells[i];
+        m.heights[i] = c.height;
+        m.terrain[i] = sim::TerrainCell{c.tile, c.shade, c.unknown4, c.subtile};
+        const std::uint16_t o = c.object & 0x7fff;
+        m.objects[i] = o;
+        if (o > 0x2580 && o < 0x2584 && s->mine_site_count < 199) {
+            const auto x = static_cast<std::int32_t>(i % static_cast<std::size_t>(map.width));
+            const auto y = static_cast<std::int32_t>(i / static_cast<std::size_t>(map.width));
+            s->mine_sites[s->mine_site_count] = {x, y};
+            if (x >= 6 && x <= map.width - 6 && y >= 15 && y <= map.height - 15) ++s->mine_site_count;
+        }
+    }
+    if (map.obstacle_grid.size() == 2 * n) m.obstacle = map.obstacle_grid;
+    return save_preview(*s, pal);
 }
 
 namespace {

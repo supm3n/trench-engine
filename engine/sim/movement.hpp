@@ -119,6 +119,8 @@ void PathGrid_UpdateRegion(GameState& s, std::int32_t x, std::int32_t y, std::in
 // Our rules (sim/flow.cpp): the land cell as PathGrid_Build computes it without the large-unit marks (bit 2 of
 // g_CellFlags); true when free; *weight: the cell's weight before smoothing.
 bool Cell_LandStatic(const GameState& s, std::int32_t x, std::int32_t y, std::uint8_t* weight);
+// Our rules (docs/ai.md 10.17): the land mass of a cell from the terrain alone (water and bridges), 0 for water.
+std::uint16_t Land_Region(GameState& s, std::int32_t x, std::int32_t y);
 bool Cell_Obstacle(const Map& m, std::int32_t x, std::int32_t y);
 bool Obstacle_UnderCell(const Map& m, std::int32_t x, std::int32_t y);
 void Terrain_SetObject(GameState& s, std::int32_t x, std::int32_t y, std::uint16_t object);
@@ -367,6 +369,12 @@ void Order_Apply(GameState& s, const Command& c, std::span<const Command> all);
 // human plays it again (ControlType 4, the kept values back). A player that is not a human's (a computer of the setup)
 // is left as it is.
 void Player_NetControl(GameState& s, std::uint8_t p, std::uint8_t level);
+// Our rules (docs/bugs.md B317), the Shift-click order queue (Unit::order_queue): true when the unit has queued orders
+// or something to do (walking, fighting, a resume point, a Work other than idle or a worker's field round), so a
+// Shift + right click appends to its queue instead of ordering it at once.
+bool Unit_RouteBusy(const Unit& u);
+// In the unit's update: an idle unit takes its next queued order; the queue ends in a house, a transport or a group.
+void OrderQueue_Next(GameState& s, std::uint8_t p, Unit& u);
 
 // sim/shell.cpp (shells, docs/combat.md 9)
 void Weapon_Fire(GameState& s, std::uint8_t player, Unit& o);

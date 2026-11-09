@@ -76,5 +76,8 @@ std::vector<std::string> Lan_BroadcastAddresses();
 // This PC's address on its network, as others would reach it (the interface of the default route; no packet is sent).
 // Empty when there is none.
 std::string Lan_LocalAddress();
+// Decision 55: this PC's global IPv6 address, which others reach over the internet (the default route's, as above;
+// no packet is sent). Empty when there is none (no IPv6, or only link-local and unique local fc00::/7 addresses).
+std::string Lan_LocalAddress6();
 
 }  // namespace antanta::net

@@ -220,6 +220,7 @@ void TStrateg_UpdateUnits(GameState& s, std::uint8_t p) {
                 if (*stock[k] < 0.0) *stock[k] = 0.0;
             }
             if (mod50 == u.frame_slot && u.field_006 != 0) TStrateg_AutoTarget(s, p, u);
+            if (!u.order_queue.empty()) OrderQueue_Next(s, p, u);  // our rules (B317): the Shift-click queue
             const Cell c0{u.map_x, u.map_y};
             const float a0 = u.angle;
             if (u.work != 0x14) TUnit_MoveFunc(s, p, u);

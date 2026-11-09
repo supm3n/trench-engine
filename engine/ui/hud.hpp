@@ -133,6 +133,23 @@ RightClickTarget right_click_target(const sim::GameState& s, const WorldGraphics
 
 std::vector<sim::Command> right_click(const sim::GameState& s, const WorldGraphics* g, const Selection& sel,
                                       ViewPos pos, int sx, int sy, std::string* what);
+// Ours (docs/bugs.md B317, Classic and Plus): Shift + right click at screen point (sx, sy), the queue_order input with
+// the click's kind and target as right_click finds them (ground 0, own house 1, enemy house 2, enemy unit 4, own
+// transport 7). Empty when the click is a plain right click instead: under original_rules, with nothing of the
+// selection busy (sim::Unit_RouteBusy: the first Shift click of idle units is a plain move), with a unit of a
+// formation group selected (groups keep the original's orders), on a field or a map object, or with only a house
+// selected. `what` gets a short description for the HUD.
+std::vector<sim::Command> queue_click(const sim::GameState& s, const WorldGraphics* g, const Selection& sel,
+                                      ViewPos pos, int sx, int sy, std::string* what);
+// The planned routes of the selection's queued orders (B317), in world view pixels (the view at 0, 0): a line from
+// each unit (at most kRouteUnits of them) to its first point and on from point to point, and one marker per point
+// clicked (a target unit's marker where the unit is now).
+struct OrderRoute {
+    std::vector<std::array<float, 4>> lines;  // x0, y0, x1, y1
+    std::vector<std::array<float, 2>> marks;
+};
+inline constexpr std::size_t kRouteUnits = 64;
+OrderRoute order_route(const sim::GameState& s, const Selection& sel);
 
 std::vector<sim::Command> stop_order(const Selection& sel);
 std::vector<sim::Command> delete_key(const Selection& sel);

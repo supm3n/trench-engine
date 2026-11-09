@@ -79,6 +79,37 @@ skirmish.rules_classic = Entente Engine
 skirmish.rules_plus = Entente Engine Plus
 #@ en=c9bc7b src=ai
 skirmish.rules_plus_tip = Entente Engine Plus: überarbeitete Regeln für Gefechte (Forschung, die tut, was ihr Text sagt, fairere Kosten und mehr). Missionen und Feldzüge verwenden immer Entente Engine.
+#@ en=ffffc4 src=ai
+skirmish.gen_title = Generierte Karte
+#@ en=24615d src=ai
+skirmish.gen_winter = Winter
+#@ en=58c23f src=ai
+skirmish.gen_sea = Meer
+#@ en=afa70d src=ai
+skirmish.gen_islands = Inseln
+#@ en=06beda src=ai
+skirmish.gen_mountains = Gebirge
+#@ en=da0bb7 src=ai
+skirmish.gen_forest = Dichter Wald
+#@ en=6b567e src=ai
+#@ en=3f3b2c src=ai
+skirmish.gen_normal = Größe: normal
+#@ en=57db07 src=ai
+skirmish.gen_large = Größe: groß
+#@ en=43897b src=ai
+skirmish.gen_new = Neue Karte
+#@ en=af74f7 src=ai
+skirmish.gen_copy = Kopieren
+#@ en=a89919 src=ai
+skirmish.gen_bad_code = Das ist kein Kartencode.
+#@ en=dc945b src=ai
+skirmish.gen_no_map = Aus diesem Code entsteht keine Karte. Neue Karte drücken.
+#@ en=2a68a9 src=ai
+skirmish.gen_copied = Kartencode kopiert.
+#@ en=95ca50 src=ai
+skirmish.gen_islands_drawn = Teams zu ungleich für Inseln. Die Inseln werden wie ohne Teams verteilt.
+#@ en=8b10d9 src=ai
+skirmish.gen_generating = Karte wird erstellt ...
 #@ en=a6d46a src=ai
 research.plus_war7 = Explosivgeschosse (+15% Gewehrangriff der Infanterie)
 #@ en=2e6818 src=ai
@@ -270,6 +301,8 @@ net.address = Adresse: {address}
 net.details_on_join = Die Details des Spiels folgen beim Beitritt.
 #@ en=053c35 src=ai
 net.map = Karte: {map}
+#@ en=19281e src=ai
+net.map_generated = Karte: generiert, {code}
 #@ en=77ad3e src=ai
 net.rules = Regeln: {rules}
 #@ en=7a9548 src=ai
@@ -318,7 +351,9 @@ net.seat_help = Offenen Platz anklicken: Der Computer spielt ihn. Einen Spieler 
 net.seat_move = Offenen Platz anklicken, um {name} dorthin zu setzen.
 # unsure: the glossary offers "Port = Hafen" (the building); here it is the network port, so I used "Port"
 #@ en=bf0619 src=ai
-net.join_at = Andere treten unter {address}, Port {port} bei.
+net.join_at = Im selben Netzwerk treten andere unter {address}, Port {port} bei.
+net.join_internet = Über das Internet brauchen sie Ihre öffentliche Adresse.
+net.join_ipv6 = Über das Internet (IPv6): {address}, Port {port}.
 #@ en=329abf src=ai
 net.this_pc = die Adresse dieses PCs
 #@ en=bbfeb6 src=ai
@@ -332,7 +367,7 @@ net.joining = Verbinde mit {address} ...
 #@ en=2593a2 src=ai
 net.ended = Das Netzwerkspiel wurde beendet: {reason}
 #@ en=595c28 src=ai
-net.no_answer = Unter {address} hat kein Spiel geantwortet. Prüfen Sie, ob der Gastgeber das Spiel geöffnet hat und ob die Windows-Firewall Entente Engine zulässt.
+net.no_answer = Unter {address} hat kein Spiel geantwortet. Prüfen Sie, ob der Gastgeber das Spiel geöffnet hat und ob die Windows-Firewall auf seinem PC Entente Engine zulässt. Über das Internet muss sein Router außerdem den TCP-Port 47625 (oder den gewählten Port) an diesen PC weiterleiten, und manche Internetanschlüsse können gar kein Spiel bereitstellen.
 #@ en=dd0f10 src=ai
 update.newest = Sie haben die neueste Version, Entente Engine {version}.
 #@ en=56e2f5 src=ai
@@ -358,9 +393,11 @@ crash.box = Entente Engine ist abgestürzt. Das tut uns leid!\n\nEin kurzer Beri
 #@ en=883b15 src=ai
 start.failed = Entente Engine konnte nicht starten.\n\nDer Grund steht in der neuesten Datei im Ordner %APPDATA%\\EntenteEngine\\logs (fügen Sie das in die Adressleiste eines Explorer-Fensters ein). Bitte schicken Sie diese Datei an die Person, von der Sie das Spiel haben.
 #@ en=9627c2 src=ai
-reason.net_protocol = Protokollversion {theirs}, der Server hat {ours}
+reason.net_protocol = die Spielversionen sind verschieden: alle brauchen dieselbe Version von Entente Engine (Protokoll {theirs}, das des Servers {ours})
 #@ en=332495 src=ai
-reason.net_build = Build {theirs}, der Server hat {ours}
+reason.net_build = die Spielversionen sind verschieden: alle brauchen dieselbe Version von Entente Engine (Ihre {theirs}, die des Servers {ours})
+#@ en=42d147 src=ai
+reason.net_map_code = Kartencode {code}: {reason}
 #@ en=a29205 src=ai
 reason.net_in_game = bereits in einem Spiel
 #@ en=0ebd3d src=ai
@@ -380,7 +417,7 @@ reason.net_host_slot = der Platz des Gastgebers ist kein Spielerplatz
 #@ en=42d461 src=ai
 reason.net_no_game = kein solches offenes Spiel
 #@ en=4a8559 src=ai
-reason.net_files_differ = Ihre Spieldateien weichen von denen des Gastgebers ab
+reason.net_files_differ = Ihre Spieldateien (der Ordner Data) weichen von denen des Gastgebers ab
 #@ en=d8c64f src=ai
 reason.net_wrong_password = falsches Passwort
 #@ en=9e99ff src=ai

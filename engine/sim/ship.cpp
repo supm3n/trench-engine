@@ -547,7 +547,13 @@ bool ShipPath_Corner(GameState& s, const std::vector<std::uint8_t>& g, std::int3
             return true;
         }
         q = p;
-        if (e == 8) return false;
+        if (e == 8) {
+            // The walk reached the target with every run end in sight: the original leaves out unwritten (Q3). Ours
+            // (docs/ai.md 10.17): the target itself is the waypoint.
+            if (s.original_rules) return false;
+            out = p;
+            return true;
+        }
         d = e;
     }
     return false;

@@ -52,6 +52,18 @@ const std::vector<TextPlace> kPlaces = {
     // ours: the rule set's label centred in 90 (its box at 745), the box's values (215 wide, the text at 18)
     {"skirmish.rules_label", 90, 15, 12, 2, C, "skirmish.rules"},
     {"skirmish.rules_value", 176, 15, 12, 1, L, "skirmish.rules_classic,skirmish.rules_plus"},
+    // ours, slice G7: the generated map's choices in the map frame: a switch's label (from its check box to the next
+    // column), the size, New map and Copy centred in their 130 wide fields (a margin each side), the title and the
+    // status
+    // over the preview
+    {"skirmish.gen_switch", 108, 15, 12, 1, L,
+     "skirmish.gen_winter,skirmish.gen_sea,skirmish.gen_islands,skirmish.gen_mountains,skirmish.gen_forest"},
+    {"skirmish.gen_value", 112, 15, 12, 1, C,
+     "skirmish.gen_normal,skirmish.gen_large,skirmish.gen_new,skirmish.gen_copy"},
+    {"skirmish.gen_title", 280, 15, 12, 1, C, "skirmish.gen_title"},
+    {"skirmish.gen_status", 200, 15, 12, 3, C,
+     "skirmish.gen_bad_code,skirmish.gen_no_map,skirmish.gen_copied,skirmish.gen_islands_drawn,"
+     "skirmish.gen_generating"},
     // The statistics (open_statistics): the row labels from x 55 to the first column at 255, the column heads
     // centred in 144.
     {"stats.row", 200, 15, 12, 1, L,
@@ -87,7 +99,9 @@ const std::vector<TextPlace> kPlaces = {
     {"net.scenario_row", 338, 15, 12, 1, L, ""},
     {"lobby.title", 390, 15, 12, 1, C, "net.game_title"},
     {"lobby.lines", 470, 15, 12, 4, L,
-     "net.waiting.*,net.all_in_host,net.all_in,net.seat_help,net.seat_move,net.join_at,net.has_password,"
+     "net.waiting.*,net.all_in_host,net.all_in,net.seat_help,net.seat_move,net.join_at,net.join_internet,net.join_ipv6,"
+     "net.has_"
+     "password,"
      "net.joining,net.choose_game"},
     // The game's panels (house_panel.cpp, unit_panel.cpp): the info column from x 5 to the buttons at 195, in Times
     // 16 (the interface scale multiplies all of it).

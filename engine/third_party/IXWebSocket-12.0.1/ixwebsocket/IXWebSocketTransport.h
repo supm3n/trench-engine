@@ -231,6 +231,10 @@ namespace ix
         // Optional ping and pong timeout
         int _pingIntervalSecs;
         std::atomic<bool> _pongReceived;
+        // Entente Engine (engine/THIRD_PARTY.md, 2026-11-08): bytes read since the last ping, and the send buffer's
+        // size just after it; a missing pong closes the link only when neither moved (a big message ahead of the pong).
+        std::atomic<bool> _rxSincePing{false};
+        size_t _txAtPing = 0;
 
         static const int kDefaultPingIntervalSecs;
 

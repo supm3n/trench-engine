@@ -312,4 +312,42 @@ std::string Lan_LocalAddress() {
     return ip == "0.0.0.0" ? std::string() : ip;
 }
 
+std::string Lan_LocalAddress6() {
+#ifdef _WIN32
+    WSADATA wsa;
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) return {};
+#endif
+    std::string out;
+    const Socket s = ::socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    if (s != kNoSocket) {
+        sockaddr_in6 to{};
+        to.sin6_family = AF_INET6, to.sin6_port = htons(9);
+        inet_pton(AF_INET6, "2001:db8::1", &to.sin6_addr);  // a documentation address: connect() only picks the route
+        sockaddr_in6 me{};
+#ifdef _WIN32
+        int len = sizeof me;
+#else
+        socklen_t len = sizeof me;
+#endif
+        if (connect(s, reinterpret_cast<const sockaddr*>(&to), sizeof to) == 0 &&
+            getsockname(s, reinterpret_cast<sockaddr*>(&me), &len) == 0) {
+            const std::uint8_t first = me.sin6_addr.s6_addr[0];
+            if ((first & 0xe0) == 0x20) {  // global unicast 2000::/3 (not link-local, unique local or a mapped IPv4)
+                char text[INET6_ADDRSTRLEN] = {};
+                inet_ntop(AF_INET6, &me.sin6_addr, text, sizeof text);
+                out = text;
+            }
+        }
+#ifdef _WIN32
+        closesocket(s);
+#else
+        close(s);
+#endif
+    }
+#ifdef _WIN32
+    WSACleanup();
+#endif
+    return out;
+}
+
 }  // namespace antanta::net

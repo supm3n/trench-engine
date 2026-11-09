@@ -2,6 +2,23 @@
 
 Versions are numbered by year: 2026.1 is the first release of 2026, 2026.2 the next one.
 
+## 2026.2
+
+- **Generated maps:** the first entry of the skirmish map list makes a new map for 2 to 8 players. Choose land, Sea
+  or Islands, Mountains, Dense forest, Winter and Normal or Large size; **New map** draws another one. Every map is
+  checked to be fair: every player gets the same resources at about the same distances, about as much land and, on
+  water maps, about as far to the sea. Each map has a short code: **Copy** it and give it to friends, and the same
+  code always makes the same map. Network games can use generated maps too.
+- **Order queues:** Shift + right click plans several orders in a row for the selected units.
+- **Computers across water:** a computer's half-full transport no longer waits forever for soldiers who cannot reach
+  it, and ships no longer lose their way near their target. With Plus the computer also builds harbours more often
+  and lands troops on other islands earlier.
+- **Network games:**
+  - **Joining fixed:** a player whose game options file differed from the host's could not join; now they can.
+  - **IPv6:** the host can now be reached over IPv6, which many cable and mobile lines need.
+  - **Clearer messages:** when joining fails, the message says why and what to check (firewall, port forwarding).
+  - **Steadier rejoin:** rejoining a long game is less likely to drop on a slow line.
+
 ## 2026.1 (the first public release)
 
 The first public release of Entente Engine, for Windows 10 and 11 (64-bit). You need your own copy of
